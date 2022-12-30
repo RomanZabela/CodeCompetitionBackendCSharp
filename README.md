@@ -1,1 +1,1 @@
-# CodeCompetitionBackendCSharp
+# "Code Competition" Backend C#
