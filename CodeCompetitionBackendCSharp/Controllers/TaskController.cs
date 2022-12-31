@@ -20,11 +20,12 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
-        public IActionResult GetTasks()
+        public IActionResult getTasks()
         {
-            var tasks = _mapper.Map<List<TaskDto>>(_taskRepository.GetTasks());
+            //var tasks = _mapper.Map<List<TaskDto>>(_taskRepository.GetTasks());
+            var tasks = _taskRepository.GetTasks();
 
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
@@ -32,17 +33,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
             return Ok(tasks);
         }
 
-        [HttpGet("{Id}")]
+        [HttpGet("{taskId}")]
         [ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
-        public IActionResult GetTaskById(int Id)
+        public IActionResult getTaskById(int teamID)
         {
-            if (!_taskRepository.IsTaskExist(Id))
+            if (!_taskRepository.IsTaskExist(teamID))
             {
                 return NotFound();
             }
 
-            var task = _mapper.Map<TaskDto>(_taskRepository.GetTaskById(Id));
+            var task = _mapper.Map<TaskDto>(_taskRepository.GetTaskById(teamID));
 
             if (!ModelState.IsValid)
             {

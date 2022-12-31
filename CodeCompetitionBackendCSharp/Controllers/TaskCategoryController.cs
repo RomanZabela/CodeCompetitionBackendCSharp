@@ -21,7 +21,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<TaskCategory>))]
-        public IActionResult GetTaskCategories()
+        public IActionResult getTaskCategories()
         {
             var taskCategories = _mapper.Map<List<TaskCategoryDto>>(_taskCategoryRepository.GetTaskCategories());
 
@@ -33,17 +33,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
             return Ok(taskCategories);
         }
 
-        [HttpGet("{Id}")]
+        [HttpGet("{taskCategoryId}")]
         [ProducesResponseType(200, Type = typeof(TaskCategory))]
         [ProducesResponseType(400)]
-        public IActionResult GetTaskCategory(int Id)
+        public IActionResult getTaskCategory(int taskCategoryId)
         {
-            if(!_taskCategoryRepository.IsTaskCategoryExist(Id))
+            if(!_taskCategoryRepository.IsTaskCategoryExist(taskCategoryId))
             {
                 return NotFound();
             }
 
-            var taskCategory = _mapper.Map<TaskCategoryDto>(_taskCategoryRepository.GetTaskCategory(Id));
+            var taskCategory = _mapper.Map<TaskCategoryDto>(_taskCategoryRepository.GetTaskCategory(taskCategoryId));
 
             if (!ModelState.IsValid)
             {
@@ -51,6 +51,48 @@ namespace CodeCompetitionBackendCSharp.Controllers
             }
 
             return Ok(taskCategory);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        public IActionResult addNewTaskCategory([FromBody] TaskCategoryDto taskCategory)
+        {
+            if (taskCategory == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var taskCategoryExist = _taskCategoryRepository.GetTaskCategories()
+                .Where(tc => tc.CategoryName.Trim().ToLower() == taskCategory.CategoryName.Trim().ToLower())
+                .FirstOrDefault();
+
+            if (taskCategoryExist != null)
+            {
+                ModelState.AddModelError("", "Task category already exist in DB");
+                return StatusCode(422, ModelState);
+            }
+
+            if (!ModelState.IsValid) 
+            { 
+                return BadRequest(ModelState); 
+            }
+
+            var categoryMap = _mapper.Map<TaskCategory>(taskCategory);
+            
+            categoryMap.UpdateDate = DateTime.Now;
+            categoryMap.CreateDate = DateTime.Now;
+            categoryMap.UpdateUserId = Enum.TEMP_USER_ID;
+            categoryMap.CreateUserId = Enum.TEMP_USER_ID;
+            categoryMap.StatusId = (int)Enum.Status.Active;
+
+            if (!_taskCategoryRepository.AddNewTaskCategory(categoryMap))
+            {
+                ModelState.AddModelError("", "Something went wrong in saving process");
+                return StatusCode(500, ModelState);
+            }
+
+            return Ok("Task category created");
         }
     }
 }

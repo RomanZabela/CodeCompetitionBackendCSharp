@@ -9,7 +9,10 @@ namespace CodeCompetitionBackendCSharp.Helper
         public MappingProfiles()
         {
             CreateMap<Models.Task, TaskDto>();
+            CreateMap<TaskDto, Models.Task>();
+
             CreateMap<TaskCategory, TaskCategoryDto>();
+            CreateMap<TaskCategoryDto, TaskCategory>();
         }
     }
 }

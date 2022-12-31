@@ -6,5 +6,8 @@
         Models.Task GetTaskById(int id);
         Models.Task GetTaskByName(string name);
         bool IsTaskExist(int id);
+
+        bool AddTask(int competitionId, Models.Task task);
+        bool Save();
     }
 }
