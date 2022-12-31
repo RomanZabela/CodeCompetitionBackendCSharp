@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
+using CodeCompetitionBackendCSharp.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodeCompetitionBackendCSharp.Controllers
@@ -51,6 +52,48 @@ namespace CodeCompetitionBackendCSharp.Controllers
             }
 
             return Ok(task);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        public IActionResult addNewTask([FromBody] TaskDto task)
+        {
+            if (task == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var taskExist = _taskRepository.GetTasks()
+                .Where(t => t.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower())
+                .FirstOrDefault();
+
+            if (taskExist != null)
+            {
+                ModelState.AddModelError("", "Task already exist in DB");
+                return StatusCode(422, ModelState);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var taskMap = _mapper.Map<Models.Task>(task);
+
+            taskMap.UpdateDate = DateTime.Now;
+            taskMap.CreateDate = DateTime.Now;
+            taskMap.UpdateUserId = Enum.TEMP_USER_ID;
+            taskMap.CreateUserId = Enum.TEMP_USER_ID;
+            taskMap.StatusId = (int)Enum.Status.Active;
+
+            if (!_taskRepository.AddTask(taskMap))
+            {
+                ModelState.AddModelError("", "Something went wrong in saving process");
+                return StatusCode(500, ModelState);
+            }
+
+            return Ok("Task category created");
         }
     }
 }

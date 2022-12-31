@@ -13,17 +13,17 @@ namespace CodeCompetitionBackendCSharp.Repository
             _context= context;
         }
 
-        public bool AddTask(int competitionId, Models.Task task)
+        public bool AddTask(Models.Task task)
         {
-            var taskCompetitionData = _context.Competitions.Where(c => c.Id == competitionId).FirstOrDefault();
+            //var taskCompetitionData = _context.Competitions.Where(c => c.Id == competitionId).FirstOrDefault();
 
-            var taskCompetition = new TaskToCompetition()
-            {
-                Competition = taskCompetitionData,
-                Task = task,
-            };
+            //var taskCompetition = new TaskToCompetition()
+            //{
+            //    Competition = taskCompetitionData,
+            //    Task = task,
+            //};
 
-            _context.Add(taskCompetitionData);
+            //_context.Add(taskCompetitionData);
             _context.Add(task);
             return Save();
         }
