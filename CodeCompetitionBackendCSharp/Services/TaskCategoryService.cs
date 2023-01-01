@@ -1,7 +1,6 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
-using static CodeCompetitionBackendCSharp.Enum;
 
 namespace CodeCompetitionBackendCSharp.Repository
 {
@@ -16,6 +15,17 @@ namespace CodeCompetitionBackendCSharp.Repository
         public bool AddNewTaskCategory(TaskCategory taskCategory)
         {
             _context.Add(taskCategory);
+            return Save();
+        }
+
+        public bool DeleteTaskCategory(TaskCategory taskCategory)
+        {
+            _context.Attach(taskCategory);
+
+            _context.Entry(taskCategory).Property(p => p.StatusId).IsModified = true;
+            _context.Entry(taskCategory).Property(p => p.UpdateDate).IsModified = true;
+            _context.Entry(taskCategory).Property(p => p.UpdateUserId).IsModified = true;
+
             return Save();
         }
 
@@ -37,7 +47,27 @@ namespace CodeCompetitionBackendCSharp.Repository
         public bool Save()
         {
             var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
+            
+            if (saved > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool UpdateTaskCategory(TaskCategory taskCategory)
+        {
+            _context.Attach(taskCategory);
+
+            _context.Entry(taskCategory).Property(p => p.CategoryName).IsModified = true;
+            _context.Entry(taskCategory).Property(p => p.CategoryDescription).IsModified = true;
+            _context.Entry(taskCategory).Property(p => p.UpdateDate).IsModified = true;
+            _context.Entry(taskCategory).Property(p => p.UpdateUserId).IsModified = true;
+
+            return Save();
         }
     }
 }

@@ -28,6 +28,17 @@ namespace CodeCompetitionBackendCSharp.Repository
             return Save();
         }
 
+        public bool DeleteTask(Models.Task task)
+        {
+            _context.Attach(task);
+
+            _context.Entry(task).Property(p => p.StatusId).IsModified = true;
+            _context.Entry(task).Property(p => p.UpdateDate).IsModified = true;
+            _context.Entry(task).Property(p => p.UpdateUserId).IsModified = true;
+
+            return Save();
+        }
+
         public Models.Task GetTaskById(int id)
         {
             return _context.Tasks.Where(t => t.Id == id).FirstOrDefault();
@@ -42,6 +53,12 @@ namespace CodeCompetitionBackendCSharp.Repository
         {
             return _context.Tasks.OrderBy(t => t.Id).ToList();
         }
+
+        public ICollection<Models.Task> GetTasksByTaskCategory(int taskCategoryId)
+        {
+            return _context.Tasks.Where(t => t.TaskCategoryId == taskCategoryId).ToList();
+        }
+
         public bool IsTaskExist(int taskId)
         {
             return _context.Tasks.Any(t => t.Id == taskId && t.StatusId == (int)Enum.Status.Active);
@@ -50,7 +67,28 @@ namespace CodeCompetitionBackendCSharp.Repository
         public bool Save()
         {
             var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
+            if (saved > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool UpdateTask(Models.Task task)
+        {
+            _context.Attach(task);
+
+            _context.Entry(task).Property(p => p.TaskName).IsModified = true;
+            _context.Entry(task).Property(p => p.TaskDescription).IsModified = true;
+            _context.Entry(task).Property(p => p.TaskContent).IsModified = true;
+            _context.Entry(task).Property(p => p.TaskCategoryId).IsModified = true;
+            _context.Entry(task).Property(p => p.UpdateDate).IsModified = true;
+            _context.Entry(task).Property(p => p.UpdateUserId).IsModified = true;
+
+            return Save();
         }
     }
 }
