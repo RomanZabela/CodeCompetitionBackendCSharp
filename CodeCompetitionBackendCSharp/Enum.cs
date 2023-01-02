@@ -1,5 +1,6 @@
 ﻿namespace CodeCompetitionBackendCSharp
 {
+
     public class Enum
     {
         public const int TEMP_USER_ID = 1;
@@ -8,5 +9,6 @@
             Active = 1,
             NotActive = 2
         }
+
     }
 }
