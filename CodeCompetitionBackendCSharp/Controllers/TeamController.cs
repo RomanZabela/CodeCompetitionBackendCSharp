@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
+using CodeCompetitionBackendCSharp.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodeCompetitionBackendCSharp.Controllers
@@ -70,6 +71,44 @@ namespace CodeCompetitionBackendCSharp.Controllers
             }
 
             return Ok(team);
+        }
+
+        [HttpPost]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        public IActionResult CreateTeam([FromBody] TeamDto teamCreate)
+        {
+
+            if (teamCreate == null)
+                return BadRequest(ModelState);
+
+            var teams = _teamService.GetTeams()
+                .Where(c => c.TeamName.Trim().ToUpper() == teamCreate.TeamName.TrimEnd().ToUpper())
+                .FirstOrDefault();
+
+            if (teams != null)
+            {
+                ModelState.AddModelError("", "Review already exists");
+                return StatusCode(422, ModelState);
+            }
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var teamMap = _mapper.Map<Team>(teamCreate);
+
+            teamMap.UpdateDate = DateTime.Now;
+            teamMap.CreateDate = DateTime.Now;
+            teamMap.CreateUserId = Enum.TEMP_USER_ID;
+            teamMap.UpdateUserId = Enum.TEMP_USER_ID;
+            teamMap.StatusId = (int)Enum.Status.Active;
+
+            if (!_teamService.CreateTeam(teamMap))
+            {
+                ModelState.AddModelError("", "Something went wrong while saving");
+                return StatusCode(500, ModelState);
+            }
+            return Ok("Successfully created");
         }
     }
 }

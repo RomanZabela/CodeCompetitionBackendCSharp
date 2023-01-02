@@ -8,6 +8,8 @@ namespace CodeCompetitionBackendCSharp.Interface
         bool IsTeamExists(int teamId);  
         Team GetTeam(int teamId);
         Team GetTeamByParticipantId(int participantId);
+        bool CreateTeam(Team team);
+        bool Save();
 
     }
 }
