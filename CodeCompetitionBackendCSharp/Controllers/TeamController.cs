@@ -16,7 +16,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
         public TeamController(ITeamService teamService, IMapper mapper)
         {
             _mapper = mapper;
-            _teamService = teamService; 
+            _teamService = teamService;
         }
 
         [HttpGet]
@@ -109,6 +109,39 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return StatusCode(500, ModelState);
             }
             return Ok("Successfully created");
+        }
+
+        [HttpPut("{teamId}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        public IActionResult UpdateTeam(int teamId, [FromBody] TeamDto updatedTeam)
+        {
+
+            if (updatedTeam == null)
+                return BadRequest(ModelState);
+
+            if (teamId != updatedTeam.Id)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!_teamService.IsTeamExists(teamId))
+                return NotFound();
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var teamMap = _mapper.Map<Team>(updatedTeam);
+
+            teamMap.UpdateDate = DateTime.Now;
+            teamMap.UpdateUserId = Enum.TEMP_USER_ID;
+           
+            if (!_teamService.UpdateTeam(teamMap))
+            {
+                ModelState.AddModelError("", "Something went wrong while updating team");
+                return StatusCode(500, ModelState);
+            }
+            return NoContent(); ;
         }
     }
 }

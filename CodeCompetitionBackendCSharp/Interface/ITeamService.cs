@@ -9,6 +9,7 @@ namespace CodeCompetitionBackendCSharp.Interface
         Team GetTeam(int teamId);
         Team GetTeamByParticipantId(int participantId);
         bool CreateTeam(Team team);
+        bool UpdateTeam(Team team); 
         bool Save();
 
     }

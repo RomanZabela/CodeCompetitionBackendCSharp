@@ -44,5 +44,19 @@ namespace CodeCompetitionBackendCSharp.Services
             var saved = _context.SaveChanges();
             return saved > 0 ? true : false;
         }
+
+        public bool UpdateTeam(Team team)
+        {
+            _context.Attach(team);
+
+            _context.Entry(team).Property(t => t.TeamName).IsModified = true;
+            _context.Entry(team).Property(t => t.TeamLeaderId).IsModified = true;
+            _context.Entry(team).Property(t => t.TotalPoints).IsModified = true;
+            _context.Entry(team).Property(t => t.UpdateDate).IsModified = true;
+            _context.Entry(team).Property(t => t.UpdateUserId).IsModified = true;
+            _context.Entry(team).Property(t => t.CompetitionId).IsModified = true;
+
+            return Save();
+        }
     }
 }
