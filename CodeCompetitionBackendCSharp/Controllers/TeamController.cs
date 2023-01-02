@@ -38,7 +38,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetTeam(int teamId)
         {
-            if (!_teamService.IsTeamExists(teamId))
+            if (!_teamService.TeamExists(teamId))
             {
                 return NotFound();
             }
@@ -116,7 +116,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public IActionResult UpdateTeam(int teamId, [FromBody] TeamDto updatedTeam)
         {
-
             if (updatedTeam == null)
                 return BadRequest(ModelState);
 
@@ -125,7 +124,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!_teamService.IsTeamExists(teamId))
+            if (!_teamService.TeamExists(teamId))
                 return NotFound();
 
             if (!ModelState.IsValid)
@@ -137,6 +136,33 @@ namespace CodeCompetitionBackendCSharp.Controllers
             teamMap.UpdateUserId = Enum.TEMP_USER_ID;
            
             if (!_teamService.UpdateTeam(teamMap))
+            {
+                ModelState.AddModelError("", "Something went wrong while updating team");
+                return StatusCode(500, ModelState);
+            }
+            return NoContent(); ;
+        }
+
+        [HttpDelete("{teamId}")]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
+        public IActionResult DeleteTeam(int teamId)
+        {
+           
+            if (!_teamService.TeamExists(teamId))
+                return NotFound();
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var teamToDelete = _teamService.GetTeam(teamId);
+
+            Enum.Status newStatus = Enum.Status.NotActive;
+            DateTime updateDate = DateTime.Now;
+            int updateUserId = Enum.TEMP_USER_ID;
+
+            if (!_teamService.DeleteTeam(teamToDelete, newStatus, updateDate, updateUserId))
             {
                 ModelState.AddModelError("", "Something went wrong while updating team");
                 return StatusCode(500, ModelState);
