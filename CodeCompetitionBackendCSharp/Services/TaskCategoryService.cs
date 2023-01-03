@@ -36,7 +36,7 @@ namespace CodeCompetitionBackendCSharp.Repository
 
         public TaskCategory GetTaskCategory(int id)
         {
-            return _context.TaskCategories.Where(tc => tc.Id == id).FirstOrDefault();
+            return _context.TaskCategories.Where(tc => tc.Id == id && tc.StatusId == (int)Enum.Status.Active).FirstOrDefault();
         }
 
         public bool IsTaskCategoryExist(int id)

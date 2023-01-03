@@ -41,22 +41,22 @@ namespace CodeCompetitionBackendCSharp.Repository
 
         public Models.Task GetTaskById(int id)
         {
-            return _context.Tasks.Where(t => t.Id == id).FirstOrDefault();
+            return _context.Tasks.Where(t => t.Id == id && t.StatusId == (int)Enum.Status.Active).FirstOrDefault();
         }
 
         public Models.Task GetTaskByName(string name)
         {
-            return _context.Tasks.Where(t => t.TaskName.ToLower() == name.ToLower()).FirstOrDefault();
+            return _context.Tasks.Where(t => t.TaskName.ToLower() == name.ToLower() && t.StatusId == (int)Enum.Status.Active).FirstOrDefault();
         }
 
         public ICollection<Models.Task> GetTasks()
         {
-            return _context.Tasks.OrderBy(t => t.Id).ToList();
+            return _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active).OrderBy(t => t.Id).ToList();
         }
 
         public ICollection<Models.Task> GetTasksByTaskCategory(int taskCategoryId)
         {
-            return _context.Tasks.Where(t => t.TaskCategoryId == taskCategoryId).ToList();
+            return _context.Tasks.Where(t => t.TaskCategoryId == taskCategoryId && t.StatusId == (int)Enum.Status.Active).ToList();
         }
 
         public bool IsTaskExist(int taskId)

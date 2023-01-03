@@ -13,14 +13,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
         private readonly ITaskService _taskService;
         private readonly IMapper _mapper;
         private readonly ITaskCategoryService _taskCategoryService;
+        private readonly ITaskToCompetitionService _taskToCompetitionService;
 
         public TaskController(ITaskService taskService,
             IMapper mapper,
-            ITaskCategoryService taskCategoryService)
+            ITaskCategoryService taskCategoryService,
+            ITaskToCompetitionService taskToCompetitionService)
         {
             _taskService = taskService;
             _mapper = mapper;
             _taskCategoryService = taskCategoryService;
+            _taskToCompetitionService = taskToCompetitionService;
         }
 
         [HttpGet]
@@ -185,7 +188,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             taskToDelete.StatusId = (int)Enum.Status.NotActive;
             taskToDelete.UpdateDate = DateTime.Now;
-            taskToDelete.UpdateUserId = Enum.TEMP_USER_ID;
+            taskToDelete.UpdateUserId = (int)Enum.TEMP_USER_ID;
+
+            var taskToConnection = _taskToCompetitionService.GetCompetitionIdsByTaskId(taskId);
+
+            if (taskToConnection.Count() > 0) 
+            {
+                foreach(var competitionId in taskToConnection)
+                {
+                    _taskToCompetitionService.DeleteTaskToCompetitionConnection(competitionId);
+                }
+            }
 
             if (!_taskService.DeleteTask(taskToDelete))
             {
