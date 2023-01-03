@@ -194,9 +194,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             if (taskToConnection.Count() > 0) 
             {
-                foreach(var competitionId in taskToConnection)
+                foreach(var taskToCompetition in taskToConnection)
                 {
-                    _taskToCompetitionService.DeleteTaskToCompetitionConnection(competitionId);
+                    taskToCompetition.UpdateDate = DateTime.Now;
+                    taskToCompetition.UpdateUserId = (int)Enum.TEMP_USER_ID;
+                    taskToCompetition.StatusId = (int)Enum.Status.NotActive;
+                    
+                    _taskToCompetitionService.DeleteTaskToCompetitionConnection(taskToCompetition);
                 }
             }
 
