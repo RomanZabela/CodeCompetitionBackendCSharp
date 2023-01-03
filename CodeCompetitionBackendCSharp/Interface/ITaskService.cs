@@ -2,14 +2,14 @@
 {
     public interface ITaskService
     {
-        ICollection<Models.Task> GetTasks();
-        Models.Task GetTaskById(int id);
-        Models.Task GetTaskByName(string name);
-        ICollection<Models.Task> GetTasksByTaskCategory(int taskCategoryId);
-        bool IsTaskExist(int id);
-        bool AddTask(Models.Task task);
-        bool UpdateTask(Models.Task task);
-        bool DeleteTask(Models.Task task);
-        bool Save();
+        Task<ICollection<Models.Task>> GetTasks();
+        Task<Models.Task> GetTaskById(int id);
+        Task<Models.Task> GetTaskByName(string name);
+        Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId);
+        Task<bool> IsTaskExist(int id);
+        Task<bool> AddTask(Models.Task task);
+        Task<bool> UpdateTask(Models.Task task);
+        Task<bool> DeleteTask(Models.Task task);
+        Task<bool> Save();
     }
 }

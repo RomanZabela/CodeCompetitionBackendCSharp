@@ -17,9 +17,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetCompetitionsIdsByTaskId(int taskId)
         {
-            var competitionsIds = _taskToCompetitionService.GetCompetitionIdsByTaskId(taskId);
+            var competitionsIds = _taskToCompetitionService.GetTaskToCompetitionByTaskId(taskId);
 
-            if (competitionsIds.Count() == 0)
+            if (competitionsIds == null)
             {
                 return NotFound();
             }
@@ -37,9 +37,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public IActionResult GetTasksIdsByCompetitionId(int competitionId)
         {
-            var tasksIds = _taskToCompetitionService.GetTasksIdsByCompetitionId(competitionId);
+            var tasksIds = _taskToCompetitionService.GetTaskToCompetitionByCompetitionId(competitionId);
 
-            if (tasksIds.Count() == 0)
+            if (tasksIds == null)
             {
                 return NotFound();
             }

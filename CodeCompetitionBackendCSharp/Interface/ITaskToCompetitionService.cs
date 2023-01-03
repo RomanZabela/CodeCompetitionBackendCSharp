@@ -4,10 +4,10 @@ namespace CodeCompetitionBackendCSharp.Interface
 {
     public interface ITaskToCompetitionService
     {
-        ICollection<TaskToCompetition> GetTasksIdsByCompetitionId(int competitionId);
-        ICollection<TaskToCompetition> GetCompetitionIdsByTaskId(int taskId);
-        bool AddConnectionTaskIdAndCompetionId(TaskToCompetition taskToCompetition);
-        bool DeleteTaskToCompetitionConnection(TaskToCompetition taskToCompetition);
-        bool Save();
+        Task<ICollection<TaskToCompetition>> GetTaskToCompetitionByCompetitionId(int competitionId);
+        Task<ICollection<TaskToCompetition>> GetTaskToCompetitionByTaskId(int taskId);
+        Task<bool> AddTaskToCompetition(TaskToCompetition taskToCompetition);
+        Task<bool> DeleteTaskToCompetition(TaskToCompetition taskToCompetition);
+        Task<bool> Save();
     }
 }

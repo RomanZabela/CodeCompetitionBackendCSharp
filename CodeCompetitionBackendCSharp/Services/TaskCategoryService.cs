@@ -1,6 +1,7 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CodeCompetitionBackendCSharp.Repository
 {
@@ -12,53 +13,56 @@ namespace CodeCompetitionBackendCSharp.Repository
             _context = context;
         }
 
-        public bool AddNewTaskCategory(TaskCategory taskCategory)
+        public async Task<bool> AddNewTaskCategory(TaskCategory taskCategory)
         {
             _context.Add(taskCategory);
-            return Save();
+
+            var result = await Save();
+            return result;
         }
 
-        public bool DeleteTaskCategory(TaskCategory taskCategory)
+        public async Task<bool> DeleteTaskCategory(TaskCategory taskCategory)
         {
             _context.Attach(taskCategory);
 
             _context.Entry(taskCategory).Property(p => p.StatusId).IsModified = true;
             _context.Entry(taskCategory).Property(p => p.UpdateDate).IsModified = true;
             _context.Entry(taskCategory).Property(p => p.UpdateUserId).IsModified = true;
-
-            return Save();
-        }
-
-        public ICollection<TaskCategory> GetTaskCategories()
-        {
-            return _context.TaskCategories.ToList();
-        }
-
-        public TaskCategory GetTaskCategory(int id)
-        {
-            return _context.TaskCategories.Where(tc => tc.Id == id && tc.StatusId == (int)Enum.Status.Active).FirstOrDefault();
-        }
-
-        public bool IsTaskCategoryExist(int id)
-        {
-            return _context.TaskCategories.Any(tc => tc.Id == id && tc.StatusId == (int)Enum.Status.Active);
-        }
-
-        public bool Save()
-        {
-            var saved = _context.SaveChanges();
             
-            if (saved > 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            var result = await Save();
+            return result;
         }
 
-        public bool UpdateTaskCategory(TaskCategory taskCategory)
+        public async Task<ICollection<TaskCategory>> GetTaskCategories()
+        {
+            var result = await _context.TaskCategories
+                                        .Where(tc => tc.StatusId == (int)Enum.Status.Active)
+                                        .ToListAsync();
+            return result;
+        }
+
+        public async Task<TaskCategory> GetTaskCategory(int id)
+        {
+            var result = await _context.TaskCategories
+                                                    .Where(tc => tc.Id == id && tc.StatusId == (int)Enum.Status.Active)
+                                                    .SingleOrDefaultAsync();
+            return result;
+        }
+
+        public async Task<bool> IsTaskCategoryExist(int id)
+        {
+            var result = await _context.TaskCategories.AnyAsync(tc => tc.Id == id && tc.StatusId == (int)Enum.Status.Active);
+            return result;
+        }
+
+        public async Task<bool> Save()
+        {
+            var saved = await _context.SaveChangesAsync();
+            
+            return saved > 0 ? true: false;
+        }
+
+        public async Task<bool> UpdateTaskCategory(TaskCategory taskCategory)
         {
             _context.Attach(taskCategory);
 
@@ -67,7 +71,8 @@ namespace CodeCompetitionBackendCSharp.Repository
             _context.Entry(taskCategory).Property(p => p.UpdateDate).IsModified = true;
             _context.Entry(taskCategory).Property(p => p.UpdateUserId).IsModified = true;
 
-            return Save();
+            var result = await Save();
+            return result;
         }
     }
 }

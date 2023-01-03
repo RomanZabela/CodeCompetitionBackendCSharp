@@ -1,6 +1,7 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CodeCompetitionBackendCSharp.Repository
 {
@@ -13,7 +14,7 @@ namespace CodeCompetitionBackendCSharp.Repository
             _context= context;
         }
 
-        public bool AddTask(Models.Task task)
+        public Task<bool> AddTask(Models.Task task)
         {
             //var taskCompetitionData = _context.Competitions.Where(c => c.Id == competitionId).FirstOrDefault();
 
@@ -28,7 +29,7 @@ namespace CodeCompetitionBackendCSharp.Repository
             return Save();
         }
 
-        public bool DeleteTask(Models.Task task)
+        public Task<bool> DeleteTask(Models.Task task)
         {
             _context.Attach(task);
 
@@ -39,45 +40,52 @@ namespace CodeCompetitionBackendCSharp.Repository
             return Save();
         }
 
-        public Models.Task GetTaskById(int id)
+        public async Task<Models.Task> GetTaskById(int id)
         {
-            return _context.Tasks.Where(t => t.Id == id && t.StatusId == (int)Enum.Status.Active).FirstOrDefault();
+            var result = await _context.Tasks.Where(t => t.Id == id &&
+                                                    t.StatusId == (int)Enum.Status.Active)
+                                            .SingleOrDefaultAsync();
+            return result;
         }
 
-        public Models.Task GetTaskByName(string name)
+        public async Task<Models.Task> GetTaskByName(string name)
         {
-            return _context.Tasks.Where(t => t.TaskName.ToLower() == name.ToLower() && t.StatusId == (int)Enum.Status.Active).FirstOrDefault();
+            var result = await _context.Tasks.Where(t => t.TaskName.ToLower() == name.ToLower() &&
+                                                    t.StatusId == (int)Enum.Status.Active)
+                                            .SingleOrDefaultAsync();
+            return result;
         }
 
-        public ICollection<Models.Task> GetTasks()
+        public async Task<ICollection<Models.Task>> GetTasks()
         {
-            return _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active).OrderBy(t => t.Id).ToList();
+            var result = await _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
+                                .OrderBy(t => t.Id)
+                                .ToListAsync();
+            return result;
         }
 
-        public ICollection<Models.Task> GetTasksByTaskCategory(int taskCategoryId)
+        public async Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId)
         {
-            return _context.Tasks.Where(t => t.TaskCategoryId == taskCategoryId && t.StatusId == (int)Enum.Status.Active).ToList();
+            var result = await _context.Tasks.Where(t => t.TaskCategoryId == taskCategoryId
+                                                    && t.StatusId == (int)Enum.Status.Active)
+                                            .ToListAsync();
+            return result;
         }
 
-        public bool IsTaskExist(int taskId)
+        public async Task<bool> IsTaskExist(int taskId)
         {
-            return _context.Tasks.Any(t => t.Id == taskId && t.StatusId == (int)Enum.Status.Active);
+            var result = await _context.Tasks.AnyAsync(t => t.Id == taskId
+                                                    && t.StatusId == (int)Enum.Status.Active);
+            return result;
         }
 
-        public bool Save()
+        public async Task<bool> Save()
         {
-            var saved = _context.SaveChanges();
-            if (saved > 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            var saved = await _context.SaveChangesAsync();
+            return saved > 0 ? true : false;
         }
 
-        public bool UpdateTask(Models.Task task)
+        public Task<bool> UpdateTask(Models.Task task)
         {
             _context.Attach(task);
 

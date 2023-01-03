@@ -1,6 +1,7 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CodeCompetitionBackendCSharp.Services
 {
@@ -13,13 +14,15 @@ namespace CodeCompetitionBackendCSharp.Services
             _context = context;
         }
 
-        public bool AddConnectionTaskIdAndCompetionId(TaskToCompetition taskToCompetition)
+        public async Task<bool> AddTaskToCompetition(TaskToCompetition taskToCompetition)
         {
-            _context.Add(taskToCompetition);
-            return Save();
+            await _context.AddAsync(taskToCompetition);
+
+            var result = await Save();
+            return result;
         }
 
-        public bool DeleteTaskToCompetitionConnection(TaskToCompetition taskToCompetition)
+        public async Task<bool> DeleteTaskToCompetition(TaskToCompetition taskToCompetition)
         {
             //_context.Remove(taskToCompetition);
             _context.Attach(taskToCompetition);
@@ -28,31 +31,32 @@ namespace CodeCompetitionBackendCSharp.Services
             _context.Entry(taskToCompetition).Property(p => p.UpdateDate).IsModified = true;
             _context.Entry(taskToCompetition).Property(p => p.StatusId).IsModified = true;
 
-            return Save();
+            var result = await Save();
+
+            return result;
         }
 
-        public ICollection<TaskToCompetition> GetCompetitionIdsByTaskId(int taskId)
+        public async Task<ICollection<TaskToCompetition>> GetTaskToCompetitionByTaskId(int taskId)
         {
-            return _context.TaskToCompetitions.Where(ttc => ttc.TaskId == taskId && ttc.StatusId == (int)Enum.Status.Active).ToList();
+            var result = await _context.TaskToCompetitions.Where(ttc => ttc.TaskId == taskId
+                                                                && ttc.StatusId == (int)Enum.Status.Active)
+                                                            .ToListAsync();
+            return result;
         }
 
-        public ICollection<TaskToCompetition> GetTasksIdsByCompetitionId(int competitionId)
+        public async Task<ICollection<TaskToCompetition>> GetTaskToCompetitionByCompetitionId(int competitionId)
         {
-            return _context.TaskToCompetitions.Where(ttc => ttc.CompetitionId == competitionId && ttc.StatusId == (int)Enum.Status.Active).ToList();
+            var result = await _context.TaskToCompetitions.Where(ttc => ttc.CompetitionId == competitionId
+                                                                && ttc.StatusId == (int)Enum.Status.Active)
+                                                            .ToListAsync();
+            return result;
         }
 
-        public bool Save()
+        public async Task<bool> Save()
         {
-            var saved = _context.SaveChanges();
+            var saved = await _context.SaveChangesAsync();
 
-            if (saved > 0)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return saved > 0 ? true : false;
         }
     }
 }
