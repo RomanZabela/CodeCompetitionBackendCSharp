@@ -13,6 +13,8 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITaskCategoryService, TaskCategoryService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<ITaskToTeamService, TaskToTeamService>();
+
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
