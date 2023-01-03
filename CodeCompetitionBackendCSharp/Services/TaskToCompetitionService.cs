@@ -21,7 +21,13 @@ namespace CodeCompetitionBackendCSharp.Services
 
         public bool DeleteTaskToCompetitionConnection(TaskToCompetition taskToCompetition)
         {
-            _context.Remove(taskToCompetition);
+            //_context.Remove(taskToCompetition);
+            _context.Attach(taskToCompetition);
+
+            _context.Entry(taskToCompetition).Property(p => p.UpdateUserId).IsModified = true;
+            _context.Entry(taskToCompetition).Property(p => p.UpdateDate).IsModified = true;
+            _context.Entry(taskToCompetition).Property(p => p.StatusId).IsModified = true;
+
             return Save();
         }
 
