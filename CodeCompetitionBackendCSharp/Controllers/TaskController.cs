@@ -96,10 +96,10 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return BadRequest(ModelState);
             }
 
-            var taskExist = await _taskService.GetTasks();
-            var sameTaskName = taskExist.Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower());
+            var taskExist = (await _taskService.GetTasks())
+                                                 .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower());
 
-            if (sameTaskName != null)
+            if (taskExist.Count() > 0)
             {
                 ModelState.AddModelError("", "Task with the same name already exist in DB");
                 return StatusCode(422, ModelState);
@@ -198,11 +198,11 @@ namespace CodeCompetitionBackendCSharp.Controllers
             taskToDelete.UpdateDate = DateTime.Now;
             taskToDelete.UpdateUserId = (int)Enum.TEMP_USER_ID;
 
-            var taskToConnections = await _taskToCompetitionService.GetTaskToCompetitionByTaskId(taskId);
+            var taskToCompetitions = await _taskToCompetitionService.GetTaskToCompetitionByTaskId(taskId);
 
-            if (taskToConnections != null) 
+            if (taskToCompetitions.Count > 0) 
             {
-                foreach(var taskToCompetition in taskToConnections)
+                foreach(var taskToCompetition in taskToCompetitions)
                 {
                     taskToCompetition.UpdateDate = DateTime.Now;
                     taskToCompetition.UpdateUserId = (int)Enum.TEMP_USER_ID;

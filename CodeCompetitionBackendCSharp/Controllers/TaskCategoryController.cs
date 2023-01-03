@@ -72,7 +72,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
                                                             .Where(tc => tc.CategoryName.Trim().ToLower() == taskCategory.CategoryName.Trim().ToLower());
 
 
-            if (getTaskCategory != null)
+            if (getTaskCategory !=  null)
             {
                 ModelState.AddModelError("", "Task category already exist in DB");
                 return StatusCode(422, ModelState);
@@ -155,7 +155,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
             var taskCategoryToDelete = await _taskCategoryService.GetTaskCategory(taskCategoryId);
             var getTaskByTaskCategory = await _taskService.GetTasksByTaskCategory(taskCategoryId);
             
-            if (getTaskByTaskCategory == null)
+            if (getTaskByTaskCategory.Count > 0)
             {
                 ModelState.AddModelError("", "Couldn't delete Task Category. Some tasks use this category");
                 return StatusCode(500, ModelState);
