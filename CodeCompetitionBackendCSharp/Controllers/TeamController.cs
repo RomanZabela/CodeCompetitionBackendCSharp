@@ -2,6 +2,7 @@
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using CodeCompetitionBackendCSharp.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodeCompetitionBackendCSharp.Controllers
@@ -11,12 +12,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
     public class TeamController : Controller
     {
         private readonly ITeamService _teamService;
+        private readonly ITaskToTeamService _taskToTeamService;
         private readonly IMapper _mapper;
 
-        public TeamController(ITeamService teamService, IMapper mapper)
+        public TeamController(
+            ITeamService teamService,
+            ITaskToTeamService taskToTeamService,
+            IMapper mapper)
         {
             _mapper = mapper;
             _teamService = teamService;
+            _taskToTeamService = taskToTeamService;
         }
 
         [HttpGet]
@@ -147,9 +153,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
         [ProducesResponseType(404)]
-        public IActionResult DeleteTeam(int teamId)
+        public async Task<IActionResult> DeleteTeam(int teamId)
         {
-           
             if (!_teamService.TeamExists(teamId))
                 return NotFound();
 
@@ -167,7 +172,24 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 ModelState.AddModelError("", "Something went wrong while updating team");
                 return StatusCode(500, ModelState);
             }
-            return NoContent(); ;
+
+            var teamTasks = await _taskToTeamService.GetTeamsTasks();
+            var teamTasksToDelete = teamTasks.Where(tt => tt.TeamId == teamId);
+
+            foreach(var teamTask in teamTasksToDelete) 
+            {
+                try
+                {
+                    await _taskToTeamService.DeleteTeamTask(teamTask);
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, ex.Message);
+                }
+
+            }
+
+            return NoContent(); 
         }
     }
 }
