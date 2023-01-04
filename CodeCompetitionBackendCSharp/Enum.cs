@@ -10,5 +10,13 @@
             NotActive = 2
         }
 
+        public enum TaskStatus
+        {
+            InProgress = 1,
+            Success = 2,
+            Fail = 3,
+            PartialSuccess = 4
+        }
+
     }
 }

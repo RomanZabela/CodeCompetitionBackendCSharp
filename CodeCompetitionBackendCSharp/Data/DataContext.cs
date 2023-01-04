@@ -464,6 +464,10 @@ namespace CodeCompetitionBackendCSharp.Data
                     .HasColumnType("datetime")
                     .HasColumnName("create_date");
 
+                entity.Property(e => e.StartTime).HasColumnName("start_time");
+
+                entity.Property(e => e.EndTime).HasColumnName("end_time");
+
                 entity.Property(e => e.CreateUserId).HasColumnName("create_user_id");
 
                 entity.Property(e => e.ParticipantIdForTask).HasColumnName("participant_id_for_task");
