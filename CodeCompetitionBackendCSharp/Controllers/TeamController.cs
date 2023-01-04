@@ -180,7 +180,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
             {
                 try
                 {
-                    await _taskToTeamService.DeleteTeamTask(teamTask);
+                    await _taskToTeamService.DeleteTeamTask(Enum.TaskStatus.Fail, teamTask);
                 }
                 catch (Exception ex)
                 {

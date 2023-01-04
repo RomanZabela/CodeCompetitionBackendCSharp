@@ -87,7 +87,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             if (teamTasksFiltered != null)
             {
-                ModelState.AddModelError("", "Review already exists");
+                ModelState.AddModelError("", "This task for this team already exists");
                 return StatusCode(422, ModelState);
             }
 
@@ -95,12 +95,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return BadRequest(ModelState);
 
             var taskTeamMap = _mapper.Map<TaskToTeam>(teamTaskCreate);
-
-            taskTeamMap.UpdateDate = DateTime.Now;
-            taskTeamMap.CreateDate = DateTime.Now;
-            taskTeamMap.CreateUserId = Enum.TEMP_USER_ID;
-            taskTeamMap.UpdateUserId = Enum.TEMP_USER_ID;
-            taskTeamMap.StatusId = (int)Enum.Status.Active;
 
             try
             {
@@ -117,7 +111,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [HttpDelete("deleteByTeamId/{teamId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> DeleteTeamTaskByTeamId(int teamId)
+        public async Task<IActionResult> DeleteTeamTaskByTeamId([FromQuery] int newStatus, int teamId)
         {
             if (!_teamService.TeamExists(teamId))
                 return NotFound();
@@ -132,7 +126,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
             {
                 try
                 {
-                    await _taskToTeamService.DeleteTeamTask(taskToTeam);
+                    await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
                 catch (Exception ex)
                 {
@@ -145,7 +139,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [HttpDelete("deleteByTaskId/{taskId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> DeleteTeamTaskByTaskId(int taskId)
+        public async Task<IActionResult> DeleteTeamTaskByTaskId([FromQuery] int newStatus, int taskId)
         {
             if (!_taskService.IsTaskExist(taskId))
                 return NotFound();
@@ -160,7 +154,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
             {
                 try
                 {
-                    await _taskToTeamService.DeleteTeamTask(taskToTeam);
+                    await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
                 catch (Exception ex)
                 {
@@ -173,7 +167,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [HttpDelete]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int taskId, [FromQuery] int teamId)
+        public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int newStatus, [FromQuery] int taskId, [FromQuery] int teamId)
         {
             if (!_taskService.IsTaskExist(taskId))
                 return NotFound();
@@ -191,7 +185,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
             {
                 try
                 {
-                    await _taskToTeamService.DeleteTeamTask(taskToTeam);
+                    await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
                 catch (Exception ex)
                 {
