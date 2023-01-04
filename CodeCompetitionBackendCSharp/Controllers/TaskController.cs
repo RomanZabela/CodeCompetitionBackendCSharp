@@ -188,8 +188,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpDelete("{taskId}")]
-        [ProducesResponseType(400)]
         [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteTask(int taskId)
         {
@@ -234,6 +234,24 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return StatusCode(500, ex.Message);
             }
             
+        }
+
+        [HttpGet("competition/{competitionId}")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+        public async Task<IActionResult> GetCompetitionId(int competitionId)
+        {
+            try
+            {
+                var taskAsync = await _taskService.GetCompetitionStatusFromNodeJS(competitionId);
+                //var tasks = _mapper.Map<List<TaskDto>>(taskAsync);
+
+                return Ok(taskAsync);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
         }
     }
 }

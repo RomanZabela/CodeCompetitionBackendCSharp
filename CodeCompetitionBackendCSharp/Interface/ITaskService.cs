@@ -1,4 +1,6 @@
-﻿namespace CodeCompetitionBackendCSharp.Interface
+﻿using CodeCompetitionBackendCSharp.Dto;
+
+namespace CodeCompetitionBackendCSharp.Interface
 {
     public interface ITaskService
     {
@@ -11,6 +13,6 @@
         Task<bool> UpdateTask(Models.Task task);
         Task<bool> DeleteTask(Models.Task task);
         Task<bool> Save();
-        Task<int> GetCompetitionStatusFromNodeJS(int competitionId);
+        Task<CompetitionDto> GetCompetitionStatusFromNodeJS(int competitionId);
     }
 }

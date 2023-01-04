@@ -141,7 +141,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteTeamTaskByTaskId([FromQuery] int newStatus, int taskId)
         {
-            if (!_taskService.IsTaskExist(taskId))
+            var isTaskExist = await _taskService.IsTaskExist(taskId);
+
+            if (!isTaskExist)
                 return NotFound();
 
             if (!ModelState.IsValid)
@@ -169,7 +171,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int newStatus, [FromQuery] int taskId, [FromQuery] int teamId)
         {
-            if (!_taskService.IsTaskExist(taskId))
+            var isTaskExist = await _taskService.IsTaskExist(taskId);
+            
+            if (!isTaskExist)
                 return NotFound();
 
             if (!_teamService.TeamExists(teamId))
