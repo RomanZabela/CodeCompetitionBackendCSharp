@@ -30,15 +30,18 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
         public async Task<IActionResult> GetTasks()
         {
-            var taskAsync = await _taskService.GetTasks();
-            var tasks = _mapper.Map<List<TaskDto>>(taskAsync);
-
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
-            }
+                var taskAsync = await _taskService.GetTasks();
+                var tasks = _mapper.Map<List<TaskDto>>(taskAsync);
 
-            return Ok(tasks);
+                return Ok(tasks);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+            
         }
 
         [HttpGet("{taskId}")]
@@ -46,22 +49,24 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> GetTaskById(int taskId)
         {
-            var taskExist = await _taskService.IsTaskExist(taskId);
-
-            if (!taskExist)
+            try
             {
-                return NotFound();
+                var taskExist = await _taskService.IsTaskExist(taskId);
+
+                if (!taskExist)
+                {
+                    return NotFound();
+                }
+
+                var taskAsync = await _taskService.GetTaskById(taskId);
+                var task = _mapper.Map<TaskDto>(taskAsync);
+
+                return Ok(task);
             }
-
-            var taskAsync = await _taskService.GetTaskById(taskId);
-            var task = _mapper.Map<TaskDto>(taskAsync);
-
-            if (!ModelState.IsValid)
+            catch(Exception ex)
             {
-                return BadRequest(ModelState);
+                return StatusCode(500, ex.Message);
             }
-
-            return Ok(task);
         }
 
         [HttpGet("{taskCategoryId}/Tasks")]
@@ -69,21 +74,24 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> GetTaskByTaskCategory(int taskCategoryId)
         {
-            var taskByCategory = await _taskService.GetTasksByTaskCategory(taskCategoryId);
-
-            if (taskByCategory == null)
+            try
             {
-                return NotFound();
+                var taskByCategory = await _taskService.GetTasksByTaskCategory(taskCategoryId);
+
+                if (taskByCategory == null)
+                {
+                    return NotFound();
+                }
+
+                var taskMap = _mapper.Map<List<TaskDto>>(taskByCategory);
+
+                return Ok(taskMap);
             }
-
-            var taskMap = _mapper.Map<List<TaskDto>>(taskByCategory);
-
-            if (!ModelState.IsValid)
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                return StatusCode(500, ex.Message);
             }
-
-            return Ok(taskMap);
+            
         }
 
         [HttpPost]
@@ -96,39 +104,41 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return BadRequest(ModelState);
             }
 
-            var taskExist = (await _taskService.GetTasks())
-                                                 .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower());
-
-            if (taskExist.Count() > 0)
+            try
             {
-                ModelState.AddModelError("", "Task with the same name already exist in DB");
-                return StatusCode(422, ModelState);
-            }
+                var taskExist = (await _taskService.GetTasks())
+                                                    .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower());
 
-            if (!ModelState.IsValid)
+                if (taskExist.Count() > 0)
+                {
+                    ModelState.AddModelError("", "Task with the same name already exist in DB");
+                    return StatusCode(422, ModelState);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var taskMap = _mapper.Map<Models.Task>(task);
+
+                taskMap.UpdateDate = DateTime.Now;
+                taskMap.CreateDate = DateTime.Now;
+                taskMap.UpdateUserId = Enum.TEMP_USER_ID;
+                taskMap.CreateUserId = Enum.TEMP_USER_ID;
+                taskMap.StatusId = (int)Enum.Status.Active;
+
+                taskMap.TaskCategory = await _taskCategoryService.GetTaskCategory(task.TaskCategoryId);
+
+                var newTask = await _taskService.AddTask(taskMap);
+
+                return Ok("Task category created");
+            }
+            catch(Exception ex)
             {
-                return BadRequest(ModelState);
-            }
-
-            var taskMap = _mapper.Map<Models.Task>(task);
-
-            taskMap.UpdateDate = DateTime.Now;
-            taskMap.CreateDate = DateTime.Now;
-            taskMap.UpdateUserId = Enum.TEMP_USER_ID;
-            taskMap.CreateUserId = Enum.TEMP_USER_ID;
-            taskMap.StatusId = (int)Enum.Status.Active;
-
-            taskMap.TaskCategory = await _taskCategoryService.GetTaskCategory(task.TaskCategoryId);
-
-            var newTask = await _taskService.AddTask(taskMap);
-
-            if (!newTask)
-            {
-                ModelState.AddModelError("", "Something went wrong in saving process");
-                return StatusCode(500, ModelState);
-            }
-
-            return Ok("Task category created");
+                return StatusCode(500, ex.Message);
+            };
+            
         }
 
         [HttpPut("{taskId}")]
@@ -147,32 +157,34 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return BadRequest(ModelState);
             }
             
-            var taskExist = await _taskService.IsTaskExist(updateTask.Id);
-
-            if (!taskExist)
+            try
             {
-                return NotFound();
-            }
+                var taskExist = await _taskService.IsTaskExist(updateTask.Id);
 
-            if (!ModelState.IsValid)
+                if (!taskExist)
+                {
+                    return NotFound();
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var taskMap = _mapper.Map<Models.Task>(updateTask);
+
+                taskMap.UpdateDate = DateTime.Now;
+                taskMap.UpdateUserId = Enum.TEMP_USER_ID;
+
+                var updatedTask = await _taskService.UpdateTask(taskMap);
+
+                return NoContent();
+            }
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                return StatusCode(500, ex.Message);
             }
-
-            var taskMap = _mapper.Map<Models.Task>(updateTask);
-
-            taskMap.UpdateDate = DateTime.Now;
-            taskMap.UpdateUserId = Enum.TEMP_USER_ID;
-
-            var updatedTask = await _taskService.UpdateTask(taskMap);
-
-            if (!updatedTask)
-            {
-                ModelState.AddModelError("", "Failed update Task Category");
-                return StatusCode(500, ModelState);
-            }
-
-            return NoContent();
+            
         }
 
         [HttpDelete("{taskId}")]
@@ -181,46 +193,47 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteTask(int taskId)
         {
-
-            var taskToDelete = await _taskService.GetTaskById(taskId);
-
-            if (taskToDelete == null)
+            try
             {
-                return NotFound();
-            }
+                var taskToDelete = await _taskService.GetTaskById(taskId);
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            taskToDelete.StatusId = (int)Enum.Status.NotActive;
-            taskToDelete.UpdateDate = DateTime.Now;
-            taskToDelete.UpdateUserId = (int)Enum.TEMP_USER_ID;
-
-            var taskToCompetitions = await _taskToCompetitionService.GetTaskToCompetitionByTaskId(taskId);
-
-            if (taskToCompetitions.Count > 0) 
-            {
-                foreach(var taskToCompetition in taskToCompetitions)
+                if (taskToDelete == null)
                 {
-                    taskToCompetition.UpdateDate = DateTime.Now;
-                    taskToCompetition.UpdateUserId = (int)Enum.TEMP_USER_ID;
-                    taskToCompetition.StatusId = (int)Enum.Status.NotActive;
-                    
-                    await _taskToCompetitionService.DeleteTaskToCompetition(taskToCompetition);
+                    return NotFound();
                 }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                taskToDelete.StatusId = (int)Enum.Status.NotActive;
+                taskToDelete.UpdateDate = DateTime.Now;
+                taskToDelete.UpdateUserId = (int)Enum.TEMP_USER_ID;
+
+                var taskToCompetitions = await _taskToCompetitionService.GetTaskToCompetitionByTaskId(taskId);
+
+                if (taskToCompetitions.Count > 0)
+                {
+                    foreach (var taskToCompetition in taskToCompetitions)
+                    {
+                        taskToCompetition.UpdateDate = DateTime.Now;
+                        taskToCompetition.UpdateUserId = (int)Enum.TEMP_USER_ID;
+                        taskToCompetition.StatusId = (int)Enum.Status.NotActive;
+                    }
+
+                    await _taskToCompetitionService.DeleteTaskToCompetition(taskToCompetitions);
+                }
+
+                await _taskService.DeleteTask(taskToDelete);
+
+                return NoContent();
             }
-
-            var deleteResult = await _taskService.DeleteTask(taskToDelete);
-
-            if (!deleteResult)
+            catch (Exception ex)
             {
-                ModelState.AddModelError("", "Failed to delete task category");
-                return StatusCode(500, ModelState);
+                return StatusCode(500, ex.Message);
             }
-
-            return NoContent();
+            
         }
     }
 }

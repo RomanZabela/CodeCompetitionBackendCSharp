@@ -16,15 +16,6 @@ namespace CodeCompetitionBackendCSharp.Repository
 
         public Task<bool> AddTask(Models.Task task)
         {
-            //var taskCompetitionData = _context.Competitions.Where(c => c.Id == competitionId).FirstOrDefault();
-
-            //var taskCompetition = new TaskToCompetition()
-            //{
-            //    Competition = taskCompetitionData,
-            //    Task = task,
-            //};
-
-            //_context.Add(taskCompetitionData);
             _context.Add(task);
             return Save();
         }
@@ -38,6 +29,11 @@ namespace CodeCompetitionBackendCSharp.Repository
             _context.Entry(task).Property(p => p.UpdateUserId).IsModified = true;
 
             return Save();
+        }
+
+        public Task<int> GetCompetitionStatusFromNodeJS(int competitionId)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<Models.Task> GetTaskById(int id)

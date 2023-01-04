@@ -12,10 +12,12 @@ namespace CodeCompetitionBackendCSharp.Helper
             CreateMap<TaskDto, Models.Task>();
 
             CreateMap<TaskCategory, TaskCategoryDto>();
-
             CreateMap<TaskCategoryDto, TaskCategory>();
             
             CreateMap<Team, TeamDto>();
+
+            CreateMap<TaskToCompetition, TaskToCompetitionDto>();
+            CreateMap<TaskToCompetitionDto, TaskToCompetition>();
 
         }
     }

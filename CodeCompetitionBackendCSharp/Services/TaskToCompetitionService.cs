@@ -22,14 +22,17 @@ namespace CodeCompetitionBackendCSharp.Services
             return result;
         }
 
-        public async Task<bool> DeleteTaskToCompetition(TaskToCompetition taskToCompetition)
+        public async Task<bool> DeleteTaskToCompetition(ICollection<TaskToCompetition> taskToCompetitions)
         {
             //_context.Remove(taskToCompetition);
-            _context.Attach(taskToCompetition);
+            foreach (TaskToCompetition taskToCompetition in taskToCompetitions)
+            {
+                _context.Attach(taskToCompetition);
 
-            _context.Entry(taskToCompetition).Property(p => p.UpdateUserId).IsModified = true;
-            _context.Entry(taskToCompetition).Property(p => p.UpdateDate).IsModified = true;
-            _context.Entry(taskToCompetition).Property(p => p.StatusId).IsModified = true;
+                _context.Entry(taskToCompetition).Property(p => p.UpdateUserId).IsModified = true;
+                _context.Entry(taskToCompetition).Property(p => p.UpdateDate).IsModified = true;
+                _context.Entry(taskToCompetition).Property(p => p.StatusId).IsModified = true;
+            }            
 
             var result = await Save();
 
