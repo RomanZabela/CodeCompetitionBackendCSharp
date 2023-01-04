@@ -4,12 +4,12 @@ namespace CodeCompetitionBackendCSharp.Interface
 {
     public interface ITaskCategoryService
     {
-        ICollection<TaskCategory> GetTaskCategories();
-        TaskCategory GetTaskCategory(int id);
-        bool IsTaskCategoryExist(int id);
-        bool AddNewTaskCategory(TaskCategory taskCategory);
-        bool UpdateTaskCategory(TaskCategory taskCategory);
-        bool DeleteTaskCategory(TaskCategory taskCategory);
-        bool Save();
+        Task<ICollection<TaskCategory>> GetTaskCategories();
+        Task<TaskCategory> GetTaskCategory(int id);
+        Task<bool> IsTaskCategoryExist(int id);
+        Task<bool> AddNewTaskCategory(TaskCategory taskCategory);
+        Task<bool> UpdateTaskCategory(TaskCategory taskCategory);
+        Task<bool> DeleteTaskCategory(TaskCategory taskCategory);
+        Task<bool> Save();
     }
 }
