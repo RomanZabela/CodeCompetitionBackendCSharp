@@ -26,11 +26,11 @@ namespace CodeCompetitionBackendCSharp.Services
             _context.Add(taskToTeam);
             return await Save();
         }
-        async public Task<bool> DeleteTeamTask(TaskToTeam taskToTeam)
+        async public Task<bool> DeleteTeamTask(Enum.TaskStatus newTaskStatus, TaskToTeam taskToTeam)
         {
             taskToTeam.UpdateDate = DateTime.Now;
             taskToTeam.UpdateUserId = Enum.TEMP_USER_ID;
-            taskToTeam.StatusId = (int)Enum.Status.NotActive;
+            taskToTeam.TaskStatusId = (int)newTaskStatus;
 
             _context.Attach(taskToTeam);
 
@@ -43,7 +43,7 @@ namespace CodeCompetitionBackendCSharp.Services
 
         public async Task<int> GetTaskCountByTeamId(int teamId)
         {
-           return await _context.TaskToTeams.Where(tt => tt.TeamId == teamId).CountAsync(); ;
+           return await _context.TaskToTeams.Where(tt => (tt.TeamId == teamId) && (tt.TaskStatusId == (int)Enum.TaskStatus.InProgress)).CountAsync(); 
         }
 
         async public Task<ICollection<TaskToTeam>> GetTeamsTasks()

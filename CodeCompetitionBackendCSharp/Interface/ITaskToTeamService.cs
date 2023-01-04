@@ -6,7 +6,7 @@ namespace CodeCompetitionBackendCSharp.Interface
     {
         Task<ICollection<TaskToTeam>> GetTeamsTasks();
         Task<bool> AddTeamsTasks(TaskToTeam taskToTeam);
-        Task<bool> DeleteTeamTask(TaskToTeam taskToTeam);
+        Task<bool> DeleteTeamTask(Enum.TaskStatus newTaskStatus, TaskToTeam taskToTeam);
         Task<int> GetTaskCountByTeamId(int teamId);
         Task<bool> Save();
         
