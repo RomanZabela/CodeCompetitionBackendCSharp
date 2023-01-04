@@ -17,18 +17,27 @@ namespace CodeCompetitionBackendCSharp.Services
         async public Task<bool> AddTeamsTasks(TaskToTeam taskToTeam)
         {
             var curNumOfTasks = await GetTaskCountByTeamId(taskToTeam.TeamId);
-            Console.WriteLine(curNumOfTasks);
 
             if (curNumOfTasks > 3) 
             {
                 return false;
             }
+
+            taskToTeam.UpdateDate = DateTime.Now;
+            taskToTeam.CreateDate = DateTime.Now;
+            taskToTeam.StartTime = DateTime.Now;
+            taskToTeam.EndTime = DateTime.MaxValue;
+            taskToTeam.CreateUserId = Enum.TEMP_USER_ID;
+            taskToTeam.UpdateUserId = Enum.TEMP_USER_ID;
+            taskToTeam.StatusId = (int)Enum.Status.Active;
+
             _context.Add(taskToTeam);
             return await Save();
         }
         async public Task<bool> DeleteTeamTask(Enum.TaskStatus newTaskStatus, TaskToTeam taskToTeam)
         {
             taskToTeam.UpdateDate = DateTime.Now;
+            taskToTeam.EndTime = DateTime.Now;
             taskToTeam.UpdateUserId = Enum.TEMP_USER_ID;
             taskToTeam.TaskStatusId = (int)newTaskStatus;
 

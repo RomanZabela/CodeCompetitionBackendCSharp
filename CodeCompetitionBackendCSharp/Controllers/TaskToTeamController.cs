@@ -87,7 +87,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             if (teamTasksFiltered != null)
             {
-                ModelState.AddModelError("", "Review already exists");
+                ModelState.AddModelError("", "This task for this team already exists");
                 return StatusCode(422, ModelState);
             }
 
@@ -95,12 +95,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return BadRequest(ModelState);
 
             var taskTeamMap = _mapper.Map<TaskToTeam>(teamTaskCreate);
-
-            taskTeamMap.UpdateDate = DateTime.Now;
-            taskTeamMap.CreateDate = DateTime.Now;
-            taskTeamMap.CreateUserId = Enum.TEMP_USER_ID;
-            taskTeamMap.UpdateUserId = Enum.TEMP_USER_ID;
-            taskTeamMap.StatusId = (int)Enum.Status.Active;
 
             try
             {

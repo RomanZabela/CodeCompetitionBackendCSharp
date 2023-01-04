@@ -8,5 +8,8 @@
         public int TaskStatusId { get; set; }
         public int ParticipantIdForTask { get; set; }
         public int? ReachedScore { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+
     }
 }

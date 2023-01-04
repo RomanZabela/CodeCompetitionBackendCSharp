@@ -13,6 +13,8 @@ namespace CodeCompetitionBackendCSharp.Models
         public int ParticipantIdForTask { get; set; }
         public DateTime CreateDate { get; set; }
         public DateTime UpdateDate { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
         public int CreateUserId { get; set; }
         public int UpdateUserId { get; set; }
         public int? ReachedScore { get; set; }
