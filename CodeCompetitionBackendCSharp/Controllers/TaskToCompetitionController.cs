@@ -66,11 +66,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         }
 
-        public class UserId
-        {
-            public int userId { get; set; }
-        }
-
         [HttpDelete("{competitionId}")]
         [ProducesResponseType(400)]
         [ProducesResponseType(204)]
