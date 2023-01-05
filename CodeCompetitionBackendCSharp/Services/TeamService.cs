@@ -1,6 +1,7 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace CodeCompetitionBackendCSharp.Services
 {
@@ -12,40 +13,40 @@ namespace CodeCompetitionBackendCSharp.Services
         {
             _context = context;
         }
-        public ICollection<Team> GetTeams()
+        public async Task<ICollection<Team>> GetTeams()
         {
-            return _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active).ToList();
+            return await _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active).ToListAsync();
         }
 
-        public bool TeamExists(int teamId)
+        public async Task<bool> TeamExists(int teamId)
         {
-            return _context.Teams.Any(t => t.Id == teamId);
+            return await _context.Teams.AnyAsync(t => t.Id == teamId);
         }
 
-        public Team GetTeam (int teamId) 
+        public async Task<Team> GetTeam (int teamId) 
         {
-            return _context.Teams.Where(t => (t.Id == teamId) && (t.StatusId == (int)Enum.Status.Active)).FirstOrDefault();
+            return await _context.Teams.Where(t => (t.Id == teamId) && (t.StatusId == (int)Enum.Status.Active)).FirstOrDefaultAsync();
         }
 
-        public Team GetTeamByParticipantId(int participantId)
+        public async Task<Team> GetTeamByParticipantId(int participantId)
         {
-            int teamId = _context.Participants.Where(p => p.Id == participantId).Select(p => p.TeamId).FirstOrDefault();
-            return _context.Teams.Where(t => t.Id == teamId).FirstOrDefault();
+            int teamId = await _context.Participants.Where(p => p.Id == participantId).Select(p => p.TeamId).FirstOrDefaultAsync();
+            return await _context.Teams.Where(t => t.Id == teamId).FirstOrDefaultAsync();
         }
 
-        public bool CreateTeam(Team team)
+        public async Task<bool> CreateTeam(Team team)
         {
             _context.Add(team);
-            return Save();
+            return await Save();
         }
 
-        public bool Save()
+        public async Task<bool> Save()
         {
-            var saved = _context.SaveChanges();
+            var saved = await _context.SaveChangesAsync();
             return saved > 0 ? true : false;
         }
 
-        public bool UpdateTeam(Team team)
+        public async Task<bool> UpdateTeam(Team team)
         {
             _context.Attach(team);
 
@@ -56,10 +57,10 @@ namespace CodeCompetitionBackendCSharp.Services
             _context.Entry(team).Property(t => t.UpdateUserId).IsModified = true;
             _context.Entry(team).Property(t => t.CompetitionId).IsModified = true;
 
-            return Save();
+            return await Save();
         }
 
-        public bool DeleteTeam(Team team, Enum.Status newStatus, DateTime updateDate, int updateUserId)
+        public async Task<bool> DeleteTeam(Team team, Enum.Status newStatus, DateTime updateDate, int updateUserId)
         {
             team.StatusId = (int)newStatus;
             team.UpdateDate = updateDate;
@@ -71,7 +72,7 @@ namespace CodeCompetitionBackendCSharp.Services
             _context.Entry(team).Property(t => t.UpdateUserId).IsModified = true;
             _context.Entry(team).Property(t => t.UpdateDate).IsModified = true;
 
-            return Save();
+            return await Save();
         }
     }
 }

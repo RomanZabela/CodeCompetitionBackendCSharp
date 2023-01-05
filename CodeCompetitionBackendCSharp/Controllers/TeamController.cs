@@ -27,75 +27,101 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Team>))]
-        public IActionResult GetTeams()
+        public async Task<IActionResult> GetTeams()
         {
-            var teams = _mapper.Map<List<TeamDto>>(_teamService.GetTeams());
-
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                ICollection<Team> teams = await _teamService.GetTeams();
+                ICollection<TeamDto> teamsDto = _mapper.Map<ICollection<TeamDto>>(teams);
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                return Ok(teamsDto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
 
-            return Ok(teams);
         }
 
         [HttpGet("{teamId}")]
         [ProducesResponseType(200, Type = typeof(Models.Team))]
         [ProducesResponseType(400)]
-        public IActionResult GetTeam(int teamId)
+        public async Task<IActionResult> GetTeam(int teamId)
         {
-            if (!_teamService.TeamExists(teamId))
+            try
             {
-                return NotFound();
+                bool isExist = await _teamService.TeamExists(teamId);
+                if (!isExist)
+                {
+                    return NotFound();
+                }
+
+                Team team = await _teamService.GetTeam(teamId);
+                TeamDto teamDto = _mapper.Map<TeamDto>(team);
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                return Ok(teamDto);
             }
-
-            var team = _mapper.Map<TeamDto>(_teamService.GetTeam(teamId));
-
-            if (!ModelState.IsValid)
+            catch (Exception ex)
             {
-                return BadRequest(ModelState);
+                return StatusCode(500, ex.Message);
             }
-
-            return Ok(team);
         }
 
         [HttpGet("teamByParticipant/{participantId}")]
         [ProducesResponseType(200, Type = typeof(Models.Team))]
         [ProducesResponseType(400)]
-        public IActionResult GetTeamByParticipantId(int participantId)
+        public async Task<IActionResult> GetTeamByParticipantId(int participantId)
         {
-            /* if (!_participantService.IsParticipantExists(participantId))
+            try
             {
-                return NotFound();
-            } */
+                Team team = await _teamService.GetTeamByParticipantId(participantId);
+                TeamDto teamDto = _mapper.Map<TeamDto>(team);
 
-            var team = _mapper.Map<TeamDto>(_teamService.GetTeamByParticipantId(participantId));
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
+                return Ok(teamDto);
             }
-
-            return Ok(team);
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }   
         }
 
         [HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public IActionResult CreateTeam([FromBody] TeamDto teamCreate)
+        public async Task<IActionResult> CreateTeam([FromBody] TeamDto teamCreate)
         {
-
             if (teamCreate == null)
                 return BadRequest(ModelState);
 
-            var teams = _teamService.GetTeams()
-                .Where(c => c.TeamName.Trim().ToUpper() == teamCreate.TeamName.TrimEnd().ToUpper())
-                .FirstOrDefault();
-
-            if (teams != null)
+            try
             {
-                ModelState.AddModelError("", "Review already exists");
-                return StatusCode(422, ModelState);
+                var teamsRepeated = await _teamService.GetTeams();
+                var teamsRepeatedFiltered = teamsRepeated.Where(c => c.TeamName.Trim().ToUpper() == teamCreate.TeamName.TrimEnd().ToUpper()).FirstOrDefault();
+
+                if (teamsRepeatedFiltered != null)
+                {
+                    ModelState.AddModelError("", "Review already exists");
+                    return StatusCode(422, ModelState);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
 
             if (!ModelState.IsValid)
@@ -109,18 +135,21 @@ namespace CodeCompetitionBackendCSharp.Controllers
             teamMap.UpdateUserId = Enum.TEMP_USER_ID;
             teamMap.StatusId = (int)Enum.Status.Active;
 
-            if (!_teamService.CreateTeam(teamMap))
+            try 
             {
-                ModelState.AddModelError("", "Something went wrong while saving");
-                return StatusCode(500, ModelState);
+                await _teamService.CreateTeam(teamMap);
+                return Ok("Successfully created");
             }
-            return Ok("Successfully created");
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         [HttpPut("{teamId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public IActionResult UpdateTeam(int teamId, [FromBody] TeamDto updatedTeam)
+        public async Task<IActionResult> UpdateTeam(int teamId, [FromBody] TeamDto updatedTeam)
         {
             if (updatedTeam == null)
                 return BadRequest(ModelState);
@@ -130,8 +159,11 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!_teamService.TeamExists(teamId))
+            bool isExist = await _teamService.TeamExists(teamId);
+            if (!isExist)
+            {
                 return NotFound();
+            }
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -140,13 +172,22 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             teamMap.UpdateDate = DateTime.Now;
             teamMap.UpdateUserId = Enum.TEMP_USER_ID;
-           
-            if (!_teamService.UpdateTeam(teamMap))
+
+            try
             {
-                ModelState.AddModelError("", "Something went wrong while updating team");
-                return StatusCode(500, ModelState);
+                bool isUpdated = await _teamService.UpdateTeam(teamMap);
+                if (!isUpdated)
+                {
+                    ModelState.AddModelError("", "Something went wrong while updating team");
+                    return StatusCode(500, ModelState);
+                }
+                return NoContent(); ;
             }
-            return NoContent(); ;
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+           
         }
 
         [HttpDelete("{teamId}")]
@@ -155,22 +196,33 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteTeam(int teamId)
         {
-            if (!_teamService.TeamExists(teamId))
+            bool isExist = await _teamService.TeamExists(teamId);
+            if (!isExist)
+            {
                 return NotFound();
+            }
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var teamToDelete = _teamService.GetTeam(teamId);
-
-            Enum.Status newStatus = Enum.Status.NotActive;
-            DateTime updateDate = DateTime.Now;
-            int updateUserId = Enum.TEMP_USER_ID;
-
-            if (!_teamService.DeleteTeam(teamToDelete, newStatus, updateDate, updateUserId))
+            try
             {
-                ModelState.AddModelError("", "Something went wrong while updating team");
-                return StatusCode(500, ModelState);
+                var teamToDelete = await _teamService.GetTeam(teamId);
+
+                Enum.Status newStatus = Enum.Status.NotActive;
+                DateTime updateDate = DateTime.Now;
+                int updateUserId = Enum.TEMP_USER_ID;
+                bool isDeleted = await _teamService.DeleteTeam(teamToDelete, newStatus, updateDate, updateUserId);
+
+                if (!isDeleted)
+                {
+                    ModelState.AddModelError("", "Something went wrong while updating team");
+                    return StatusCode(500, ModelState);
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
             }
 
             var teamTasks = await _taskToTeamService.GetTeamsTasks();
