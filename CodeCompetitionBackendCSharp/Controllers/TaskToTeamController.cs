@@ -2,6 +2,7 @@
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using CodeCompetitionBackendCSharp.Repository;
 using CodeCompetitionBackendCSharp.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -113,8 +114,11 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteTeamTaskByTeamId([FromQuery] int newStatus, int teamId)
         {
-            if (!_teamService.TeamExists(teamId))
+            bool isExist = await _teamService.TeamExists(teamId);
+            if (!isExist)
+            {
                 return NotFound();
+            }
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -141,7 +145,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteTeamTaskByTaskId([FromQuery] int newStatus, int taskId)
         {
-            if (!_taskService.IsTaskExist(taskId))
+            var isTaskExist = await _taskService.IsTaskExist(taskId);
+            if (!isTaskExist)
                 return NotFound();
 
             if (!ModelState.IsValid)
@@ -169,10 +174,12 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int newStatus, [FromQuery] int taskId, [FromQuery] int teamId)
         {
-            if (!_taskService.IsTaskExist(taskId))
+            var isTaskExist = await _taskService.IsTaskExist(taskId);
+            if (!isTaskExist)
                 return NotFound();
 
-            if (!_teamService.TeamExists(teamId))
+            var isTeamExist = await _teamService.TeamExists(teamId);
+            if (!isTeamExist)
                 return NotFound();
 
             if (!ModelState.IsValid)
