@@ -3,10 +3,19 @@ using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Repository;
 using CodeCompetitionBackendCSharp.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddCors(policy =>
+{
+	policy.AddPolicy("CorsPolicy", opt => opt
+		.AllowAnyOrigin()
+		.AllowAnyHeader()
+		.AllowAnyMethod()
+		.WithExposedHeaders("X-Pagination"));
+});
 
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -35,8 +44,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("CorsPolicy");
+
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.Run();
+
+

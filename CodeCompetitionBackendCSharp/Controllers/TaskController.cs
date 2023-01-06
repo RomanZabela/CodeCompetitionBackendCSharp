@@ -2,7 +2,9 @@
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using CodeCompetitionBackendCSharp.RequestFeatures;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
@@ -28,14 +30,15 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
-        public async Task<IActionResult> GetTasks()
+        public async Task<IActionResult> GetTasks([FromQuery] TaskParameters taskParameters )
         {
             try
             {
-                var taskAsync = await _taskService.GetTasks();
+                var taskAsync = await _taskService.GetTasks(taskParameters);
                 var tasks = _mapper.Map<List<TaskDto>>(taskAsync);
+				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
 
-                return Ok(tasks);
+				return Ok(tasks);
             }
             catch(Exception ex)
             {
@@ -106,7 +109,10 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             try
             {
-                var taskExist = (await _taskService.GetTasks())
+                TaskParameters taskParameters = new TaskParameters();
+                taskParameters.switchOff = true;
+
+				var taskExist = (await _taskService.GetTasks(taskParameters))
                                                     .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower());
 
                 if (taskExist.Count() > 0)
