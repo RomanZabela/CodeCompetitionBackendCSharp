@@ -1,4 +1,5 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
+using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
 using CodeCompetitionBackendCSharp.Paging;
@@ -70,7 +71,25 @@ namespace CodeCompetitionBackendCSharp.Repository
             return result;
         }
 
-        public async Task<bool> IsTaskExist(int taskId)
+		public async Task<PagedList<TaskWithCategoryNameDto>> GetTasksExtended(TaskParameters taskParameters)
+		{
+			var results = await (from t in _context.Tasks
+                                 join tc in _context.TaskCategories on t.TaskCategoryId equals tc.Id
+                                 select new TaskWithCategoryNameDto
+								 {
+						             Id = t.Id, 
+                                     TaskName = t.TaskName, 
+                                     TaskDescription = t.TaskDescription, 
+                                     TaskContent = t.TaskContent, 
+                                     Timeframe = (TimeSpan)t.Timeframe,
+                                     Points = t.Points, 
+                                     TaskCategoryName = tc.CategoryName 
+                                 }).ToListAsync();
+
+			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize);          
+		}
+
+		public async Task<bool> IsTaskExist(int taskId)
         {
             var result = await _context.Tasks.AnyAsync(t => t.Id == taskId
                                                     && t.StatusId == (int)Enum.Status.Active);
