@@ -47,7 +47,26 @@ namespace CodeCompetitionBackendCSharp.Controllers
             
         }
 
-        [HttpGet("{taskId}")]
+		[HttpGet("extended")]
+		[ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+		public async Task<IActionResult> GetTasksExtended([FromQuery] TaskParameters taskParameters)
+		{
+			try
+			{
+				var taskAsync = await _taskService.GetTasksExtended(taskParameters);
+				
+				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+
+				return Ok(taskAsync);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+
+		}
+
+		[HttpGet("{taskId}")]
         [ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
         public async Task<IActionResult> GetTaskById(int taskId)

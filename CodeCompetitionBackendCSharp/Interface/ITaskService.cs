@@ -1,4 +1,5 @@
-﻿using CodeCompetitionBackendCSharp.Paging;
+﻿using CodeCompetitionBackendCSharp.Dto;
+using CodeCompetitionBackendCSharp.Paging;
 using CodeCompetitionBackendCSharp.RequestFeatures;
 
 namespace CodeCompetitionBackendCSharp.Interface
@@ -6,7 +7,9 @@ namespace CodeCompetitionBackendCSharp.Interface
     public interface ITaskService
     {
         Task<PagedList<Models.Task>> GetTasks(TaskParameters taskParameters);
-        Task<Models.Task> GetTaskById(int id);
+		Task<PagedList<TaskWithCategoryNameDto>> GetTasksExtended(TaskParameters taskParameters);
+
+		Task<Models.Task> GetTaskById(int id);
         Task<Models.Task> GetTaskByName(string name);
         Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId);
         Task<bool> IsTaskExist(int id);
