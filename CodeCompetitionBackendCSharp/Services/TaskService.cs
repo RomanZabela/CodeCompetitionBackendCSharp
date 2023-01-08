@@ -4,6 +4,7 @@ using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
 using CodeCompetitionBackendCSharp.Paging;
 using CodeCompetitionBackendCSharp.RequestFeatures;
+using CodeCompetitionBackendCSharp.Services.ServiceExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace CodeCompetitionBackendCSharp.Repository
@@ -81,10 +82,13 @@ namespace CodeCompetitionBackendCSharp.Repository
                                      TaskName = t.TaskName, 
                                      TaskDescription = t.TaskDescription, 
                                      TaskContent = t.TaskContent, 
-                                     Timeframe = (TimeSpan)t.Timeframe,
+                                     Timeframe = t.Timeframe,
                                      Points = t.Points, 
                                      TaskCategoryName = tc.CategoryName 
-                                 }).ToListAsync();
+                                 })
+                                 .Search(taskParameters.SearchString)
+                                 .Sort(taskParameters.OrderBy)
+                                 .ToListAsync();
 
 			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize);          
 		}
