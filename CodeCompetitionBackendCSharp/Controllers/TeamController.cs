@@ -2,8 +2,11 @@
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using CodeCompetitionBackendCSharp.Paging;
+using CodeCompetitionBackendCSharp.RequestFeatures;
 using CodeCompetitionBackendCSharp.Services;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
@@ -27,12 +30,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Team>))]
-        public async Task<IActionResult> GetTeams()
+        public async Task<IActionResult> GetTeams([FromQuery] TeamParameters teamParameters)
         {
             try
             {
-                ICollection<Team> teams = await _teamService.GetTeams();
-                ICollection<TeamDto> teamsDto = _mapper.Map<ICollection<TeamDto>>(teams);
+                var teams = await _teamService.GetTeams(teamParameters);
+                var teamsDto = _mapper.Map<ICollection<TeamDto>>(teams);
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(teams.MetaData));
 
                 if (!ModelState.IsValid)
                 {
@@ -40,6 +44,30 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 }
 
                 return Ok(teamsDto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpGet("extended")]
+        [ProducesResponseType(200, Type = typeof(PagedList<TeamExtendedDto>))]
+        public async Task<IActionResult> GetTeamsExtended([FromQuery] TeamParameters teamParameters)
+        {
+            try
+            {
+                var teams = await _teamService.GetTeamsExtended(teamParameters);
+                
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(teams.MetaData));
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                return Ok(teams);
             }
             catch (Exception ex)
             {
@@ -110,7 +138,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             try
             {
-                var teamsRepeated = await _teamService.GetTeams();
+                TeamParameters teamParameters = new TeamParameters();
+                teamParameters.switchOff = true;
+                var teamsRepeated = await _teamService.GetTeams(teamParameters);
                 var teamsRepeatedFiltered = teamsRepeated.Where(c => c.TeamName.Trim().ToUpper() == teamCreate.TeamName.TrimEnd().ToUpper()).FirstOrDefault();
 
                 if (teamsRepeatedFiltered != null)
