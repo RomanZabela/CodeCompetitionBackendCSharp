@@ -1,6 +1,9 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
+using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using CodeCompetitionBackendCSharp.Paging;
+using CodeCompetitionBackendCSharp.RequestFeatures;
 using Microsoft.EntityFrameworkCore;
 
 namespace CodeCompetitionBackendCSharp.Services
@@ -13,9 +16,10 @@ namespace CodeCompetitionBackendCSharp.Services
         {
             _context = context;
         }
-        public async Task<ICollection<Team>> GetTeams()
+        public async Task<PagedList<Team>> GetTeams(TeamParameters teamParameters)
         {
-            return await _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active).ToListAsync();
+            var result = await _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active).ToListAsync();
+            return PagedList<Team>.ToPagedList(result, teamParameters.PageNumber, teamParameters.PageSize);
         }
 
         public async Task<bool> TeamExists(int teamId)
@@ -73,6 +77,23 @@ namespace CodeCompetitionBackendCSharp.Services
             _context.Entry(team).Property(t => t.UpdateDate).IsModified = true;
 
             return await Save();
+        }
+
+        public async Task<PagedList<TeamExtendedDto>> GetTeamsExtended(TeamParameters teamsParameters)
+        {
+            var results = await (from t in _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active)
+                                 join p in _context.Participants on t.TeamLeaderId equals p.Id
+                                 join c in _context.Competitions on t.CompetitionId equals c.Id
+                                 select new TeamExtendedDto
+                                 {
+                                     Id = t.Id,
+                                     TeamName = t.TeamName,
+                                     TeamLeaderEmail = p.Email,
+                                     TotalPoints = t.TotalPoints,
+                                     CompetitionName = c.CompetitionName
+                                 }).ToListAsync();
+
+            return PagedList<TeamExtendedDto>.ToPagedList(results, teamsParameters.PageNumber, teamsParameters.PageSize);
         }
     }
 }

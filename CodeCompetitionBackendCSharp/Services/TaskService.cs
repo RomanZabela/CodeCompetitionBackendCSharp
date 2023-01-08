@@ -73,7 +73,7 @@ namespace CodeCompetitionBackendCSharp.Repository
 
 		public async Task<PagedList<TaskWithCategoryNameDto>> GetTasksExtended(TaskParameters taskParameters)
 		{
-			var results = await (from t in _context.Tasks
+			var results = await (from t in _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
                                  join tc in _context.TaskCategories on t.TaskCategoryId equals tc.Id
                                  select new TaskWithCategoryNameDto
 								 {
