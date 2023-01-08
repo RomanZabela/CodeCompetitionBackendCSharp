@@ -2,6 +2,8 @@
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using CodeCompetitionBackendCSharp.Paging;
+using CodeCompetitionBackendCSharp.Services.ServiceExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace CodeCompetitionBackendCSharp.Repository
@@ -41,9 +43,7 @@ namespace CodeCompetitionBackendCSharp.Repository
             Uri address = new Uri("http://localhost:6061/competition/5");
             var response = await client.GetFromJsonAsync<CompetitionDto>(address);
             
-            return response;
-
-            
+            return response;            
         }
 
         public async Task<Models.Task> GetTaskById(int id)
@@ -62,12 +62,24 @@ namespace CodeCompetitionBackendCSharp.Repository
             return result;
         }
 
-        public async Task<ICollection<Models.Task>> GetTasks()
+		public async Task<ICollection<Models.Task>> GetTasks()
+		{
+			var result = await _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
+								.OrderBy(t => t.TaskName)
+								.ToListAsync();
+			return result;
+		}
+
+        public async Task<PagedList<Models.Task>> GetTasksPaging(TaskParameters taskParameters)
         {
-            var result = await _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
-                                .OrderBy(t => t.Id)
-                                .ToListAsync();
-            return result;
+            var result = await _context.Tasks
+                    .Where(t => t.StatusId == (int)Enum.Status.Active)
+                    .Search(taskParameters.SearchString)
+                    .Sort(taskParameters.OrderBy)
+                    .ToListAsync();
+
+            return PagedList<Models.Task>
+                .ToPagedList(result, taskParameters.PageNumber, taskParameters.PageSize);
         }
 
         public async Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId)
@@ -104,5 +116,22 @@ namespace CodeCompetitionBackendCSharp.Repository
 
             return Save();
         }
-    }
+
+		public async Task<PagedList<TaskWithCategoryName>> GetTasksWithCategoryName()
+		{
+			var result = await (from t in _context.Tasks
+                                join c in _context.TaskCategories on t.TaskCategoryId equals c.Id
+                                select new TaskWithCategoryName
+                                {
+                                    TaskName = t.TaskName,
+                                    TaskDescription = t.TaskDescription,
+                                    TaskContent = t.TaskContent,
+                                    TaskCategoryName = c.CategoryName,
+                                    Timeframe = t.Timeframe,
+                                    Points = t.Points
+                                }).ToListAsync();
+			return PagedList<TaskWithCategoryName>
+				.ToPagedList(result, 2, 2);
+		}
+	}
 }

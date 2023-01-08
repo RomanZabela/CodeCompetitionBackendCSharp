@@ -3,6 +3,7 @@ using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
@@ -44,7 +45,27 @@ namespace CodeCompetitionBackendCSharp.Controllers
             
         }
 
-        [HttpGet("{taskId}")]
+		[HttpGet("Paging")]
+		[ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+		public async Task<IActionResult> GetTasks([FromQuery] TaskParameters taskParameters)
+		{
+			try
+			{
+				var taskAsync = await _taskService.GetTasksPaging(taskParameters);
+				var tasks = _mapper.Map<List<TaskDto>>(taskAsync);
+
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+
+				return Ok(tasks);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+
+		}
+
+		[HttpGet("{taskId}")]
         [ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
         public async Task<IActionResult> GetTaskById(int taskId)
@@ -94,7 +115,32 @@ namespace CodeCompetitionBackendCSharp.Controllers
             
         }
 
-        [HttpPost]
+		[HttpGet("TasksWithCategoryName")]
+		[ProducesResponseType(200, Type = typeof(Models.Task))]
+		[ProducesResponseType(400)]
+		public async Task<IActionResult> GetTasksWithCategoryName()
+		{
+			try
+			{
+				var taskWithCategory = await _taskService.GetTasksWithCategoryName();
+
+				if (taskWithCategory == null)
+				{
+					return NotFound();
+				}
+
+				//var taskMap = _mapper.Map<List<TaskDto>>(taskByCategory);
+
+				return Ok(taskWithCategory);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+
+		}
+
+		[HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
         public async Task<IActionResult> AddNewTask([FromBody] TaskDto task)
@@ -106,6 +152,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             try
             {
+
                 var taskExist = (await _taskService.GetTasks())
                                                     .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower());
 
