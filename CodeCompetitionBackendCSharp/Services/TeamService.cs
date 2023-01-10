@@ -5,6 +5,7 @@ using CodeCompetitionBackendCSharp.Models;
 using CodeCompetitionBackendCSharp.Paging;
 using CodeCompetitionBackendCSharp.RequestFeatures;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace CodeCompetitionBackendCSharp.Services
 {
