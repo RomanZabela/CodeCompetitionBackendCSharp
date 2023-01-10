@@ -41,7 +41,6 @@ namespace CodeCompetitionBackendCSharp.Services
 
         public async Task<bool> CreateTeam(Team team)
         {
-            Console.WriteLine("Competition Id - " + team.CompetitionId);
             _context.Add(team);
             return await Save();
         }
