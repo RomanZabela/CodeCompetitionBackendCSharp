@@ -5,6 +5,7 @@ using CodeCompetitionBackendCSharp.Models;
 using CodeCompetitionBackendCSharp.Paging;
 using CodeCompetitionBackendCSharp.RequestFeatures;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace CodeCompetitionBackendCSharp.Services
 {
@@ -40,6 +41,7 @@ namespace CodeCompetitionBackendCSharp.Services
 
         public async Task<bool> CreateTeam(Team team)
         {
+            Console.WriteLine("Competition Id - " + team.CompetitionId);
             _context.Add(team);
             return await Save();
         }
