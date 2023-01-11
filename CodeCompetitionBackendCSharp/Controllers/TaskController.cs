@@ -2,13 +2,16 @@
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Security.Claims;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [Authorize]
     public class TaskController : Controller
     {
         private readonly ITaskService _taskService;
@@ -28,6 +31,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrator")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
         public async Task<IActionResult> GetTasks()
         {
@@ -46,7 +50,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
 		[HttpGet("Paging")]
-		[ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+        [Authorize(Roles = "Administrator")]
+
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
 		public async Task<IActionResult> GetTasks([FromQuery] TaskParameters taskParameters)
 		{
 			try
