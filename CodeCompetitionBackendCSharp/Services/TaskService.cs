@@ -35,6 +35,17 @@ namespace CodeCompetitionBackendCSharp.Repository
             return Save();
         }
 
+        public async Task<CompetitionDto> GetCompetitionStatusFromNodeJS(int competitionId)
+        {
+            var handler = new HttpClientHandler();
+            var client = new HttpClient(handler);
+
+            Uri address = new Uri("http://localhost:6061/competition/" + competitionId);
+            var response = await client.GetFromJsonAsync<CompetitionDto>(address);
+
+            return response;
+        }
+
         public async Task<Models.Task> GetTaskById(int id)
         {
             var result = await _context.Tasks.Where(t => t.Id == id &&
