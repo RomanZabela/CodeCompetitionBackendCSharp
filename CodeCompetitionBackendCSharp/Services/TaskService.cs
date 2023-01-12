@@ -35,11 +35,6 @@ namespace CodeCompetitionBackendCSharp.Repository
             return Save();
         }
 
-        public Task<int> GetCompetitionStatusFromNodeJS(int competitionId)
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task<Models.Task> GetTaskById(int id)
         {
             var result = await _context.Tasks.Where(t => t.Id == id &&

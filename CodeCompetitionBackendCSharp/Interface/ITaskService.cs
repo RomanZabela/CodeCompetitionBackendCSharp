@@ -17,6 +17,5 @@ namespace CodeCompetitionBackendCSharp.Interface
         Task<bool> UpdateTask(Models.Task task);
         Task<bool> DeleteTask(Models.Task task);
         Task<bool> Save();
-        Task<int> GetCompetitionStatusFromNodeJS(int competitionId);
     }
 }

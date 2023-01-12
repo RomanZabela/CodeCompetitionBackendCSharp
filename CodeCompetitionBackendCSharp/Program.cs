@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(policy =>
 {
 	policy.AddPolicy("CorsPolicy", opt => opt
-		.WithOrigins("https://localhost:7001")
+		.WithOrigins("https://localhost:5001")
 		.AllowAnyHeader()
 		.AllowAnyMethod()
 		.WithExposedHeaders("X-Pagination"));
