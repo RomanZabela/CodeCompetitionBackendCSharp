@@ -40,7 +40,7 @@ namespace CodeCompetitionBackendCSharp.Repository
             var handler = new HttpClientHandler();
             var client = new HttpClient(handler);
 
-            Uri address = new Uri("http://localhost:6061/competition/" + competitionId);
+            Uri address = new Uri("http://localhost:6060/competition/" + competitionId);
             var response = await client.GetFromJsonAsync<CompetitionDto>(address);
 
             return response;

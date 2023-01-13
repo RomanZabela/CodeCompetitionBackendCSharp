@@ -11,7 +11,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class TaskController : Controller
     {
         private readonly ITaskService _taskService;
@@ -51,7 +51,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 
 		[HttpGet("extended")]
-        [Authorize(Roles = "Administrator")]
+        //[Authorize(Roles = "system administrator")]
 
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
 		public async Task<IActionResult> GetTasksExtended([FromQuery] TaskParameters taskParameters)

@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(policy =>
 {
 	policy.AddPolicy("CorsPolicy", opt => opt
-		.WithOrigins("https://localhost:5001")
+		.WithOrigins("https://localhost:7094")
 		.AllowAnyHeader()
 		.AllowAnyMethod()
 		.WithExposedHeaders("X-Pagination"));
@@ -27,6 +27,15 @@ builder.Services.AddAuthentication(options =>
 	options.Authority = builder.Configuration["Auth0:Domain"];
 	options.Audience = builder.Configuration["Auth0:ApiIdentifier"];
 });
+
+builder.Services.AddAuth0AuthenticationClient(config =>
+{
+	config.Domain = builder.Configuration["Auth0:Domain"];
+	config.ClientId = builder.Configuration["Auth0:ClientId"];
+	config.ClientSecret = builder.Configuration["Auth0:ClientSecret"];
+});
+
+builder.Services.AddAuth0ManagementClient().AddManagementAccessToken();
 
 builder.Services.AddControllers();
 
