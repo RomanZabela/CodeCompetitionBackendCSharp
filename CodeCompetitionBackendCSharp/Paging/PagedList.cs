@@ -19,12 +19,24 @@ namespace CodeCompetitionBackendCSharp.Paging
 			AddRange(items);
 		}
 
-		public static PagedList<T> ToPagedList(IEnumerable<T> source, int pageNumber, int pageSize)
+		public static PagedList<T> ToPagedList(IEnumerable<T> source, int pageNumber, int pageSize, bool switchedOff = false)
 		{
-			var count = source.Count();
-			var items = source
-				.Skip((pageNumber - 1) * pageSize)
-				.Take(pageSize).ToList();
+			List<T> items;
+			int count = 0;
+
+			if (switchedOff)
+			{
+                count = source.Count();
+				items = source.ToList();
+            }
+			else
+			{
+                count = source.Count();
+                items = source
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize).ToList();
+            }
+			
 
 			return new PagedList<T>(items, count, pageNumber, pageSize);		
 		}
