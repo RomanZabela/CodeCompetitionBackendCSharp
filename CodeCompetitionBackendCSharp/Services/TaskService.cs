@@ -116,6 +116,8 @@ namespace CodeCompetitionBackendCSharp.Repository
             _context.Entry(task).Property(p => p.TaskCategoryId).IsModified = true;
             _context.Entry(task).Property(p => p.UpdateDate).IsModified = true;
             _context.Entry(task).Property(p => p.UpdateUserId).IsModified = true;
+            _context.Entry(task).Property(p => p.Points).IsModified = true;
+            _context.Entry(task).Property(p => p.Timeframe).IsModified = true;
 
             return Save();
         }
