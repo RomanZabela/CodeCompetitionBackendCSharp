@@ -200,6 +200,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 taskMap.UpdateDate = DateTime.Now;
                 taskMap.UpdateUserId = Enum.TEMP_USER_ID;
+                taskMap.StatusId = (int)Enum.Status.Active;
+
 
                 var updatedTask = await _taskService.UpdateTask(taskMap);
 
