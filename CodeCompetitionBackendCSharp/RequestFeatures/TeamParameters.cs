@@ -2,7 +2,10 @@
 {
     public class TeamParameters
     {
-        public bool switchOff = false;
+        public bool switchOff { get; set; } = false;
+
+        public string switchOffString { get; set; } = "0";
+
         const int maxPageSize = 50;
         public int PageNumber { get; set; } = 1;
         public int _pageSize = 6;

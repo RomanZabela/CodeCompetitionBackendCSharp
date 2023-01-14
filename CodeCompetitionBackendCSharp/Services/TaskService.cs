@@ -61,7 +61,7 @@ namespace CodeCompetitionBackendCSharp.Repository
             var result = await _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
                                 .OrderBy(t => t.Id)
                                 .ToListAsync();
-            return PagedList<Models.Task>.ToPagedList(result, taskParameters.PageNumber, taskParameters.PageSize);
+            return PagedList<Models.Task>.ToPagedList(result, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
         }
 
         public async Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId)
