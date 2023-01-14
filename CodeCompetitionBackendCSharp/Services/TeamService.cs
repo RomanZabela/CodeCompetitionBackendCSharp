@@ -20,7 +20,7 @@ namespace CodeCompetitionBackendCSharp.Services
         public async Task<PagedList<Team>> GetTeams(TeamParameters teamParameters)
         {
             var result = await _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active).ToListAsync();
-            return PagedList<Team>.ToPagedList(result, teamParameters.PageNumber, teamParameters.PageSize);
+            return PagedList<Team>.ToPagedList(result, teamParameters.PageNumber, teamParameters.PageSize, teamParameters.switchOff);
         }
 
         public async Task<bool> TeamExists(int teamId)
@@ -82,6 +82,7 @@ namespace CodeCompetitionBackendCSharp.Services
 
         public async Task<PagedList<TeamExtendedDto>> GetTeamsExtended(TeamParameters teamsParameters)
         {
+            teamsParameters.switchOff = teamsParameters.switchOffString == "1" ? true : false; 
             var results = await (from t in _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active)
                                  join p in _context.Participants on t.TeamLeaderId equals p.Id
                                  join c in _context.Competitions on t.CompetitionId equals c.Id
@@ -94,7 +95,7 @@ namespace CodeCompetitionBackendCSharp.Services
                                      CompetitionName = c.CompetitionName
                                  }).ToListAsync();
 
-            return PagedList<TeamExtendedDto>.ToPagedList(results, teamsParameters.PageNumber, teamsParameters.PageSize);
+            return PagedList<TeamExtendedDto>.ToPagedList(results, teamsParameters.PageNumber, teamsParameters.PageSize, teamsParameters.switchOff);
         }
     }
 }
