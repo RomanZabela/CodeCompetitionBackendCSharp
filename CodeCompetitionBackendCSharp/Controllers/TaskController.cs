@@ -3,6 +3,7 @@ using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
 using CodeCompetitionBackendCSharp.RequestFeatures;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -10,6 +11,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    //[Authorize]
     public class TaskController : Controller
     {
         private readonly ITaskService _taskService;
@@ -47,8 +49,11 @@ namespace CodeCompetitionBackendCSharp.Controllers
             
         }
 
+
 		[HttpGet("extended")]
-		[ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+        [Authorize(Roles = "system administrator")]
+
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
 		public async Task<IActionResult> GetTasksExtended([FromQuery] TaskParameters taskParameters)
 		{
 			try

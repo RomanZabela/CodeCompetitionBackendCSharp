@@ -2,12 +2,14 @@
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [Authorize]
     public class TaskCategoryController : Controller
     {
         private readonly ITaskCategoryService _taskCategoryService;
