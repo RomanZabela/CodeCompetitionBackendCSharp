@@ -61,6 +61,7 @@ namespace CodeCompetitionBackendCSharp.Services
             _context.Entry(team).Property(t => t.UpdateDate).IsModified = true;
             _context.Entry(team).Property(t => t.UpdateUserId).IsModified = true;
             _context.Entry(team).Property(t => t.CompetitionId).IsModified = true;
+            _context.Entry(team).Property(t => t.IconImage).IsModified = true;
 
             return await Save();
         }
@@ -91,7 +92,8 @@ namespace CodeCompetitionBackendCSharp.Services
                                      Id = t.Id,
                                      TeamName = t.TeamName,
                                      TeamLeaderEmail = p.Email,
-                                     TotalPoints = t.TotalPoints,
+									 IconImage = t.IconImage,
+									 TotalPoints = t.TotalPoints,
                                      CompetitionName = c.CompetitionName
                                  }).ToListAsync();
 

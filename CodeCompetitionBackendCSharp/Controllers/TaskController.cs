@@ -51,7 +51,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 
 		[HttpGet("extended")]
-        [Authorize(Roles = "system administrator")]
+        [Authorize(Roles = "system administrator, competition administrator")]
 
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
 		public async Task<IActionResult> GetTasksExtended([FromQuery] TaskParameters taskParameters)
