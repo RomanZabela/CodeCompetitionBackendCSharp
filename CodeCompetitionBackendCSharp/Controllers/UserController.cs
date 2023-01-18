@@ -39,6 +39,57 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         }
 
+
+        [HttpGet("withRoles")]
+        public async Task<IEnumerable<UserDtoExtended>> GetUsersWithRoles()
+        {
+            var users = await _managementApiClient.Users.GetAllAsync(
+                new GetUsersRequest(), new PaginationInfo()
+            );
+
+            List<UserDtoExtended> userList = users.Select(x => new UserDtoExtended
+            {
+                Id = x.UserId,
+                Email = x.Email,
+                FirstName = x.FirstName,
+                LastName = x.LastName,
+                Blocked = x.Blocked ?? false,
+                RoleName = "",
+                RoleId = ""
+            }).ToList();
+
+            var userRoles = new List<RoleDto>();
+
+            foreach(var user in userList)
+            {
+                var roles = await _managementApiClient.Users.GetRolesAsync(
+                    user.Id, new PaginationInfo()
+                );
+
+                if (roles.Count > 0) 
+                {
+                    userRoles.Add(roles.Select(x => new RoleDto
+                    {
+                        Id = x.Id,
+                        Name = x.Name,
+                        Description = x.Description,
+                        UserId = user.Id
+                    }).FirstOrDefault());
+                }
+            }
+
+            foreach(var user in userList)
+            {
+                if (userRoles.Exists(ur => ur.UserId == user.Id))
+                {
+                    user.RoleName = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault().Name;
+                    user.RoleId = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault().Id;
+                }
+            }
+
+            return userList;
+        }
+
         [HttpGet("allRoles")]
         public async Task<IEnumerable<RoleDto>> GetRoles()
         {
@@ -70,6 +121,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
             });
 
         }
+
+
 
         [HttpDelete("deleteRoles/{Id}")]
         public async Task<IActionResult> DeleteUserRolesByUserId(string Id)
