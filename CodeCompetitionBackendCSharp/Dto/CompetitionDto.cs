@@ -5,5 +5,7 @@
         public string competitionName { get; set; }
         public int maxTaskPerGroups { get; set; }
         public int competitionStatus { get; set; }
+        public string CompetitionAdministratorId { get; set; }
+
     }
 }
