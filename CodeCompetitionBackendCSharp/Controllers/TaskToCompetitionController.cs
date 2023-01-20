@@ -3,6 +3,7 @@ using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
@@ -12,17 +13,22 @@ namespace CodeCompetitionBackendCSharp.Controllers
     {
         private readonly ITaskToCompetitionService _taskToCompetitionService;
         private readonly IMapper _mapper;
+		private readonly ILoggerManager _logger;
 
-        public TaskToCompetitionController(ITaskToCompetitionService taskToCompetitionService, IMapper mapper)
+		public TaskToCompetitionController(ITaskToCompetitionService taskToCompetitionService,
+                                            IMapper mapper,
+                                            ILoggerManager logger)
         {
             _taskToCompetitionService = taskToCompetitionService;
             _mapper = mapper;
-        }
+			_logger = logger;
+		}
 
         [HttpGet("{taskId}/competitonIds")]
         [ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> GetCompetitionsIdsByTaskId(int taskId)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> GetCompetitionsIdsByTaskId(int taskId)
         {
             try
             {
@@ -30,14 +36,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (competitionsIds == null)
                 {
+                    _logger.LogError($"404. TaskToCompetition with taskid: {taskId} couldn't found.");
                     return NotFound();
                 }
 
+                _logger.LogInfo($"200. TaskToCompetition: {competitionsIds.Count}.");
                 return Ok(competitionsIds);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}.");
+				return StatusCode(500, ex.Message);
             }
 
         }
@@ -45,7 +54,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [HttpGet("{competitionId}/taskIds")]
         [ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> GetTasksIdsByCompetitionId(int competitionId)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> GetTasksIdsByCompetitionId(int competitionId)
         {
             try
             {
@@ -54,14 +64,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (tasksIds == null)
                 {
-                    return NotFound();
+					_logger.LogError($"404. TaskToCompetition with competitionId: {competitionId} couldn't found.");
+					return NotFound();
                 }
 
-                return Ok(taskToCompetition);
+				_logger.LogInfo($"200. TaskToCompetition: {taskToCompetition.Count}.");
+				return Ok(taskToCompetition);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
 
         }
@@ -72,9 +85,10 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpDelete("{competitionId}")]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(404)]
+		[ProducesResponseType(204)]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(404)]
         public async Task<IActionResult> DeleteTaskToCompetitionById(int competitionId, [FromBody] int userId)
         {
             try
@@ -83,11 +97,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
                 }
 
                 if (taskToCompetitions.Count == 0)
                 {
+                    _logger.LogInfo($"204. TaskToCompetition with competitionId {competitionId} couldn't found.");
                     return NoContent();
                 }
 
@@ -100,11 +116,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 await _taskToCompetitionService.DeleteTaskToCompetition(taskToCompetitions);
 
+                _logger.LogInfo($"204. TaskToCompetition with competitionId {competitionId} deleted.");
                 return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
     }

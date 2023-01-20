@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CodeCompetitionBackendCSharp.Interface;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 
 namespace CodeCompetitionBackendCSharp.Controllers
@@ -7,9 +8,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
     [ApiController]
     public class UploadController : ControllerBase
     {
-        [HttpPost]
+		private readonly ILoggerManager _logger;		
+
+        public UploadController(ILoggerManager logger)
+        {
+			_logger = logger;
+		}
+
+		[HttpPost]
 		[ProducesResponseType(204)]
 		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
 		public IActionResult Upload()
         {
             try
@@ -26,16 +35,20 @@ namespace CodeCompetitionBackendCSharp.Controllers
                     {
                         file.CopyTo(stream);
                     }
+
+                    _logger.LogInfo($"200. File added {dbPath}");
                     return Ok(dbPath);
                 }
                 else
                 {
-                    return BadRequest();
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest();
                 }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex}");
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, $"Internal server error: {ex}");
             }
         }
     }

@@ -11,29 +11,34 @@ using CodeCompetitionBackendCSharp.RequestFeatures;
 using CodeCompetitionBackendCSharp.Paging;
 using CodeCompetitionBackendCSharp.Models;
 using Newtonsoft.Json;
+using CodeCompetitionBackendCSharp.Interface;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    // [Authorize]
+    //[Authorize]
     public class UserController : ControllerBase
     {
         private readonly IManagementApiClient _managementApiClient;
+		private readonly ILoggerManager _logger;
 
-        public UserController(IManagementApiClient managementApiClient)
+		public UserController(IManagementApiClient managementApiClient, ILoggerManager logger)
         {
             _managementApiClient = managementApiClient;
-        }
+			_logger = logger;
+		}
 
         [HttpGet]
 		[ProducesResponseType(200, Type = typeof(IEnumerable<UserDto>))]
+		[ProducesResponseType(401)]
 		public async Task<IActionResult> GetUsers()
         {
             try
             {
 				if (!ModelState.IsValid)
 				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
 					return BadRequest(ModelState);
 				}
 
@@ -41,6 +46,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 								new GetUsersRequest(), new PaginationInfo()
 							);
 
+				_logger.LogInfo($"200. Users: {users.Count}.");
 				return Ok(users.Select(x => new UserDto
 				{
 					Id = x.UserId,
@@ -52,7 +58,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 			}
             catch(Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }            
 
         }
@@ -60,6 +67,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet("withRoles")]
 		[ProducesResponseType(200, Type = typeof(IEnumerable<UserDtoExtended>))]
+		[ProducesResponseType(401)]
 		public async Task<IActionResult> GetUsersWithRoles([FromQuery] UserParameters userParameters)
         {
 
@@ -111,10 +119,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 				var toReturn = Paging.PagedList<UserDtoExtended>.ToPagedList(userList, userParameters.PageNumber, userParameters.PageSize, userParameters.switchOff);
                 Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(toReturn.MetaData));
+
+				_logger.LogInfo($"200. Users: {toReturn.Count}");
                 return Ok(toReturn);
             }
             catch (Exception ex)
             {
+				_logger.LogError($"500. {ex.Message}");
 				return StatusCode(500, ex.Message);
 			}
 
@@ -122,14 +133,15 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet("allRoles")]
 		[ProducesResponseType(200, Type = typeof(IEnumerable<RoleDto>))]
+		[ProducesResponseType(401)]
 		public async Task<IActionResult> GetRoles()
         {
             try
             {
 				var roles = await _managementApiClient.Roles.GetAllAsync(
-				new GetRolesRequest(), new PaginationInfo()
-			);
+					new GetRolesRequest(), new PaginationInfo());
 
+				_logger.LogInfo($"200. Roles: {roles.Count}.");
 				return Ok(roles.Select(x => new RoleDto
 				{
 					Id = x.Id,
@@ -139,7 +151,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 			}
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
             
 
@@ -147,14 +160,15 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet("userRoles/{Id}")]
 		[ProducesResponseType(200, Type = typeof(IEnumerable<RoleDto>))]
+		[ProducesResponseType(401)]
 		public async Task<IActionResult> GetUserRolesByUserId(string Id)
         {
             try
             {
 				var roles = await _managementApiClient.Users.GetRolesAsync(
-				Id, new PaginationInfo()
-			);
+					Id, new PaginationInfo());
 
+				_logger.LogInfo($"200. Roles: {roles.Count}");
 				return Ok(roles.Select(x => new RoleDto
 				{
 					Id = x.Id,
@@ -164,13 +178,15 @@ namespace CodeCompetitionBackendCSharp.Controllers
 			}
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
 
         }
 
         [HttpDelete("deleteRoles/{Id}")]
 		[ProducesResponseType(204)]
+		[ProducesResponseType(401)]
 
 		public async Task<IActionResult> DeleteUserRolesByUserId(string Id)
         {
@@ -183,18 +199,22 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 await _managementApiClient.Users.RemoveRolesAsync(
                     Id, new AssignRolesRequest() { Roles = rolesIdToDeleteStr }
                 );
+
+				_logger.LogInfo($"204. UserRoles for userId {Id} deleted.");
                 return NoContent();
 
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
 
         }
 
 		[HttpPut("assignRoles/{Id}")]
 		[ProducesResponseType(200, Type = typeof(string))]
+		[ProducesResponseType(401)]
 		public async Task<IActionResult> AssignRoleToUser(string Id, [FromBody] string[] roles)
 		{
 			try
@@ -210,10 +230,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
 				}
 				// Add new role
 				await _managementApiClient.Users.AssignRolesAsync(Id, new AssignRolesRequest() { Roles = roles });
+
+				_logger.LogInfo($"200. Role {roles.Length} assigned to user {Id}");
 				return Ok("Successfully updated");
 			}
 			catch (Exception ex)
 			{
+				_logger.LogError($"500. {ex.Message}");
 				return StatusCode(500, ex.Message);
 			}
 		}

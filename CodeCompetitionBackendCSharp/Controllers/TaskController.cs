@@ -11,28 +11,32 @@ namespace CodeCompetitionBackendCSharp.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class TaskController : Controller
     {
         private readonly ITaskService _taskService;
         private readonly IMapper _mapper;
         private readonly ITaskCategoryService _taskCategoryService;
         private readonly ITaskToCompetitionService _taskToCompetitionService;
+		private readonly ILoggerManager _logger;
 
-        public TaskController(ITaskService taskService,
+		public TaskController(ITaskService taskService,
             IMapper mapper,
             ITaskCategoryService taskCategoryService,
-            ITaskToCompetitionService taskToCompetitionService)
+            ITaskToCompetitionService taskToCompetitionService,
+            ILoggerManager logger)
         {
             _taskService = taskService;
             _mapper = mapper;
             _taskCategoryService = taskCategoryService;
             _taskToCompetitionService = taskToCompetitionService;
-        }
+			_logger = logger;
+		}
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
-        public async Task<IActionResult> GetTasks([FromQuery] TaskParameters taskParameters )
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> GetTasks([FromQuery] TaskParameters taskParameters )
         {
             try
             {
@@ -40,10 +44,12 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 var tasks = _mapper.Map<List<TaskDto>>(taskAsync);
 				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
 
+                _logger.LogInfo($"200. All Tasks.");
 				return Ok(tasks);
             }
             catch(Exception ex)
             {
+                _logger.LogError($"500. {ex.Message}");
                 return StatusCode(500, ex.Message);
             }
             
@@ -54,6 +60,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [Authorize(Roles = "system administrator, competition administrator")]
 
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+		[ProducesResponseType(401)]
 		public async Task<IActionResult> GetTasksExtended([FromQuery] TaskParameters taskParameters)
 		{
 			try
@@ -62,10 +69,12 @@ namespace CodeCompetitionBackendCSharp.Controllers
 				
 				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
 
+				_logger.LogInfo($"200. Task with {taskParameters.SearchString} {taskParameters.PageNumber} {taskParameters.OrderBy}");
 				return Ok(taskAsync);
 			}
 			catch (Exception ex)
 			{
+				_logger.LogError($"500. {ex.Message}");
 				return StatusCode(500, ex.Message);
 			}
 
@@ -74,7 +83,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		[HttpGet("{taskId}")]
         [ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> GetTaskById(int taskId)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> GetTaskById(int taskId)
         {
             try
             {
@@ -82,24 +92,28 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (!taskExist)
                 {
+                    _logger.LogError($"404. Task {taskId} couldn't found.");
                     return NotFound();
                 }
 
                 var taskAsync = await _taskService.GetTaskById(taskId);
                 var task = _mapper.Map<TaskDto>(taskAsync);
 
-                return Ok(task);
+				_logger.LogInfo($"200. Task: {task.Id}");
+				return Ok(task);
             }
             catch(Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
         [HttpGet("{taskCategoryId}/Tasks")]
         [ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> GetTaskByTaskCategory(int taskCategoryId)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> GetTaskByTaskCategory(int taskCategoryId)
         {
             try
             {
@@ -107,16 +121,19 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (taskByCategory == null)
                 {
+                    _logger.LogError($"404. Tasks with task category{taskCategoryId} couldn't found.");
                     return NotFound();
                 }
 
                 var taskMap = _mapper.Map<List<TaskDto>>(taskByCategory);
 
-                return Ok(taskMap);
+				_logger.LogInfo($"200. Task: {taskMap.Count}");
+				return Ok(taskMap);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
             
         }
@@ -124,11 +141,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> AddNewTask([FromBody] TaskDto task)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> AddNewTask([FromBody] TaskDto task)
         {
             if (task == null)
             {
-                return BadRequest(ModelState);
+				_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+				return BadRequest(ModelState);
             }
 
             try
@@ -141,13 +160,14 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (taskExist.Count() > 0)
                 {
-                    ModelState.AddModelError("", "Task with the same name already exist in DB");
-                    return StatusCode(422, ModelState);
+                    _logger.LogError($"409. Task with the same name {task.TaskName} already exist in DB");
+                    return Conflict("Task with the same name already exist in DB");
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
                 }
 
                 var taskMap = _mapper.Map<Models.Task>(task);
@@ -162,29 +182,35 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 var newTask = await _taskService.AddTask(taskMap);
 
-                return Ok("Task category created");
+                _logger.LogInfo($"200. Task {taskMap.TaskName}");
+                return Ok("Task created");
             }
             catch(Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             };
             
         }
 
         [HttpPut("{taskId}")]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(204)]
-        public async Task<IActionResult> UpdateTask(int taskId, [FromBody] TaskDto updateTask)
+		[ProducesResponseType(204)]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(404)]
+        
+		public async Task<IActionResult> UpdateTask(int taskId, [FromBody] TaskDto updateTask)
         {
             if (updateTask == null)
             {
-                return BadRequest(ModelState);
+				_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+				return BadRequest(ModelState);
             }
 
             if (taskId != updateTask.Id)
             {
-                return BadRequest(ModelState);
+				_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+				return BadRequest(ModelState);
             }
             
             try
@@ -193,12 +219,14 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (!taskExist)
                 {
+                    _logger.LogError($"404. Task {taskId} couldn't found");
                     return NotFound();
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
                 }
 
                 var taskMap = _mapper.Map<Models.Task>(updateTask);
@@ -210,18 +238,21 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 var updatedTask = await _taskService.UpdateTask(taskMap);
 
-                return NoContent();
+				_logger.LogInfo($"204. Task {taskId} updated");
+				return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
             
         }
 
         [HttpDelete("{taskId}")]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(204)]
+		[ProducesResponseType(204)]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> DeleteTask(int taskId)
         {
@@ -231,12 +262,14 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (taskToDelete == null)
                 {
+                    _logger.LogError($"404. Task {taskId} couldn't found");
                     return NotFound();
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
                 }
 
                 taskToDelete.StatusId = (int)Enum.Status.NotActive;
@@ -259,11 +292,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 await _taskService.DeleteTask(taskToDelete);
 
+                _logger.LogInfo($"204. Task deleted {taskToDelete}");
                 return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
             
         }

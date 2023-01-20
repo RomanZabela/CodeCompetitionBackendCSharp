@@ -5,6 +5,7 @@ using CodeCompetitionBackendCSharp.Models;
 using CodeCompetitionBackendCSharp.Repository;
 using CodeCompetitionBackendCSharp.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
@@ -17,18 +18,21 @@ namespace CodeCompetitionBackendCSharp.Controllers
         private readonly ITaskService _taskService;
 
         private readonly IMapper _mapper;
+		private readonly ILoggerManager _logger;
 
-        public TaskToTeamController(
+		public TaskToTeamController(
             ITaskToTeamService taskToTeamService, 
             ITeamService teamService,
             ITaskService taskService,
-            IMapper mapper)
+            IMapper mapper,
+            ILoggerManager logger)
         {
             _taskToTeamService = taskToTeamService;
             _teamService = teamService;
             _taskService = taskService;
             _mapper = mapper;
-        }
+			_logger = logger;
+		}
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(List<Models.Team>))]
@@ -41,20 +45,24 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
                 }
 
-                return Ok(teamsDto);
+				_logger.LogInfo($"200. TaskToTeam: {teamsDto.Count}");
+				return Ok(teamsDto);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
         [HttpGet ("tasksCount/{teamId}")]
         [ProducesResponseType(200, Type = typeof(int))]
-        public async Task<IActionResult> GetTeamTasksCount(int teamId)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> GetTeamTasksCount(int teamId)
         {
             try
             {
@@ -62,27 +70,35 @@ namespace CodeCompetitionBackendCSharp.Controllers
                
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
                 }
 
+                _logger.LogInfo($"200. TaskToTeam: {tasksNum}");
                 return Ok(tasksNum);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
         [HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> CreateTeamTask([FromBody] TaskToTeamDto teamTaskCreate)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> CreateTeamTask([FromBody] TaskToTeamDto teamTaskCreate)
         {
             try
             {
 
                 if (teamTaskCreate == null)
-                    return BadRequest(ModelState);
+                {
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
+                    
 
                 var teamTasks = await _taskToTeamService.GetTeamsTasks();
 
@@ -90,22 +106,28 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (teamTasksFiltered != null)
                 {
-                    ModelState.AddModelError("", "This task for this team already exists");
-                    return StatusCode(422, ModelState);
+                    _logger.LogError($"409. This task {teamTaskCreate.TaskId} for this team {teamTaskCreate.TeamId} already exists.");
+                    return Conflict("This task for this team already exists");
                 }
 
                 if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                {
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
+                    
 
                 var taskTeamMap = _mapper.Map<TaskToTeam>(teamTaskCreate);
 
-
                 await _taskToTeamService.AddTeamsTasks(taskTeamMap);
+
+                _logger.LogInfo($"200. TaskToTeam {taskTeamMap.Id} created.");
                 return Ok("Successfully created");
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
@@ -113,18 +135,23 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [HttpDelete("deleteByTeamId/{teamId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> DeleteTeamTaskByTeamId([FromQuery] int newStatus, int teamId)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> DeleteTeamTaskByTeamId([FromQuery] int newStatus, int teamId)
         {
             try
             {
                 bool isExist = await _teamService.TeamExists(teamId);
                 if (!isExist)
                 {
-                    return NotFound();
+					_logger.LogError($"404. TaskToTeam with TaskId {teamId} couldn't found.");
+					return NotFound();
                 }
 
                 if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                {
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				};                    
 
                 var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
                 var tasksToTeamsToDelete = tasksToTeams.Where(tt => tt.TeamId == teamId);
@@ -134,29 +161,39 @@ namespace CodeCompetitionBackendCSharp.Controllers
                     await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
 
-                return NoContent();
+				_logger.LogInfo($"204. TaskToTeam with TeamId {teamId} deleted.");
+				return NoContent();
             }
 
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
         [HttpDelete("deleteByTaskId/{taskId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> DeleteTeamTaskByTaskId([FromQuery] int newStatus, int taskId)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> DeleteTeamTaskByTaskId([FromQuery] int newStatus, int taskId)
         {
             try
             {
 
                 var isTaskExist = await _taskService.IsTaskExist(taskId);
                 if (!isTaskExist)
-                    return NotFound();
+                {
+                    _logger.LogError($"404. TaskToTeam with TaskId {taskId} couldn't found.");
+					return NotFound();
+				}
+                    
 
                 if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                {
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				};                 
 
                 var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
                 var tasksToTeamsToDelete = tasksToTeams.Where(tt => tt.TaskId == taskId);
@@ -166,32 +203,47 @@ namespace CodeCompetitionBackendCSharp.Controllers
                     await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
 
-                return NoContent();
+				_logger.LogInfo($"204. TaskToTeam with TaskId {taskId} deleted.");
+				return NoContent();
 
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
         [HttpDelete]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int newStatus, [FromQuery] int taskId, [FromQuery] int teamId)
+		[ProducesResponseType(401)]
+		public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int newStatus, [FromQuery] int taskId, [FromQuery] int teamId)
         {
             try
             {
                 var isTaskExist = await _taskService.IsTaskExist(taskId);
                 if (!isTaskExist)
-                    return NotFound();
+                {
+					_logger.LogError($"404. Task {taskId} couldn't found.");
+					return NotFound();
+				}
+                    
 
                 var isTeamExist = await _teamService.TeamExists(teamId);
+
                 if (!isTeamExist)
-                    return NotFound();
+                {
+                    _logger.LogError($"404. Team {teamId} couldn't found.");
+					return NotFound();
+				};
+                    
 
                 if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                {
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				};                 
 
                 var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
                 var tasksToTeamsToDelete = tasksToTeams.Where(tt => (tt.TaskId == taskId) && (tt.TeamId == teamId));
@@ -200,11 +252,14 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 {
                     await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
+
+                _logger.LogInfo($"204. TaskToTeam with TaskId {taskId} and TeamId {teamId} deleted.");
                 return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
     }
