@@ -7,6 +7,10 @@ using Auth0.ManagementApi.Paging;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
 using System.Security.Cryptography.X509Certificates;
+using CodeCompetitionBackendCSharp.RequestFeatures;
+using CodeCompetitionBackendCSharp.Paging;
+using CodeCompetitionBackendCSharp.Models;
+using Newtonsoft.Json;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
@@ -41,53 +45,63 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 
         [HttpGet("withRoles")]
-        public async Task<IEnumerable<UserDtoExtended>> GetUsersWithRoles()
+        public async Task<IActionResult> GetUsersWithRoles([FromQuery] UserParameters userParameters)
         {
-            var users = await _managementApiClient.Users.GetAllAsync(
-                new GetUsersRequest(), new PaginationInfo()
-            );
 
-            List<UserDtoExtended> userList = users.Select(x => new UserDtoExtended
+            try
             {
-                Id = x.UserId,
-                Email = x.Email,
-                FirstName = x.FirstName,
-                LastName = x.LastName,
-                Blocked = x.Blocked ?? false,
-                RoleName = "",
-                RoleId = ""
-            }).ToList();
+				var users = await _managementApiClient.Users.GetAllAsync(
+				    new GetUsersRequest(), new PaginationInfo()
+			    );
+				List<UserDtoExtended> userList = users.Select(x => new UserDtoExtended
+				{
+					Id = x.UserId,
+					Email = x.Email,
+					FirstName = x.FirstName,
+					LastName = x.LastName,
+					Blocked = x.Blocked ?? false,
+					RoleName = "",
+					RoleId = ""
+				}).ToList();
 
-            var userRoles = new List<RoleDto>();
+				var userRoles = new List<RoleDto>();
 
-            foreach(var user in userList)
-            {
-                var roles = await _managementApiClient.Users.GetRolesAsync(
-                    user.Id, new PaginationInfo()
-                );
+				foreach (var user in userList)
+				{
+					var roles = await _managementApiClient.Users.GetRolesAsync(
+						user.Id, new PaginationInfo()
+					);
 
-                if (roles.Count > 0) 
-                {
-                    userRoles.Add(roles.Select(x => new RoleDto
-                    {
-                        Id = x.Id,
-                        Name = x.Name,
-                        Description = x.Description,
-                        UserId = user.Id
-                    }).FirstOrDefault());
-                }
+					if (roles.Count > 0)
+					{
+						userRoles.Add(roles.Select(x => new RoleDto
+						{
+							Id = x.Id,
+							Name = x.Name,
+							Description = x.Description,
+							UserId = user.Id
+						}).FirstOrDefault());
+					}
+				}
+
+				foreach (var user in userList)
+				{
+					if (userRoles.Exists(ur => ur.UserId == user.Id))
+					{
+						user.RoleName = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault().Name;
+						user.RoleId = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault().Id;
+					}
+				}
+
+				var toReturn = Paging.PagedList<UserDtoExtended>.ToPagedList(userList, userParameters.PageNumber, userParameters.PageSize, userParameters.switchOff);
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(toReturn.MetaData));
+                return Ok(toReturn);
             }
-
-            foreach(var user in userList)
+            catch (Exception ex)
             {
-                if (userRoles.Exists(ur => ur.UserId == user.Id))
-                {
-                    user.RoleName = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault().Name;
-                    user.RoleId = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault().Id;
-                }
-            }
+				return StatusCode(500, ex.Message);
+			}
 
-            return userList;
         }
 
         [HttpGet("allRoles")]
