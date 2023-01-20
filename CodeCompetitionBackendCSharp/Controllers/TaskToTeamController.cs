@@ -78,27 +78,28 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> CreateTeamTask([FromBody] TaskToTeamDto teamTaskCreate)
         {
-
-            if (teamTaskCreate == null)
-                return BadRequest(ModelState);
-
-            var teamTasks = await _taskToTeamService.GetTeamsTasks();
-
-            var teamTasksFiltered = teamTasks.Where(c => (c.TeamId == teamTaskCreate.TeamId) && (c.TaskId == teamTaskCreate.TaskId)).FirstOrDefault();
-
-            if (teamTasksFiltered != null)
-            {
-                ModelState.AddModelError("", "This task for this team already exists");
-                return StatusCode(422, ModelState);
-            }
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var taskTeamMap = _mapper.Map<TaskToTeam>(teamTaskCreate);
-
             try
             {
+
+                if (teamTaskCreate == null)
+                    return BadRequest(ModelState);
+
+                var teamTasks = await _taskToTeamService.GetTeamsTasks();
+
+                var teamTasksFiltered = teamTasks.Where(c => (c.TeamId == teamTaskCreate.TeamId) && (c.TaskId == teamTaskCreate.TaskId)).FirstOrDefault();
+
+                if (teamTasksFiltered != null)
+                {
+                    ModelState.AddModelError("", "This task for this team already exists");
+                    return StatusCode(422, ModelState);
+                }
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var taskTeamMap = _mapper.Map<TaskToTeam>(teamTaskCreate);
+
+
                 await _taskToTeamService.AddTeamsTasks(taskTeamMap);
                 return Ok("Successfully created");
             }
@@ -114,30 +115,32 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteTeamTaskByTeamId([FromQuery] int newStatus, int teamId)
         {
-            bool isExist = await _teamService.TeamExists(teamId);
-            if (!isExist)
+            try
             {
-                return NotFound();
-            }
+                bool isExist = await _teamService.TeamExists(teamId);
+                if (!isExist)
+                {
+                    return NotFound();
+                }
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
 
-            var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
-            var tasksToTeamsToDelete = tasksToTeams.Where(tt => tt.TeamId == teamId);
+                var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
+                var tasksToTeamsToDelete = tasksToTeams.Where(tt => tt.TeamId == teamId);
 
-            foreach(var taskToTeam in tasksToTeamsToDelete)
-            {
-                try
+                foreach (var taskToTeam in tasksToTeamsToDelete)
                 {
                     await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, ex.Message);
-                }
+
+                return NoContent();
             }
-            return NoContent();
+
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         [HttpDelete("deleteByTaskId/{taskId}")]
@@ -145,28 +148,31 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteTeamTaskByTaskId([FromQuery] int newStatus, int taskId)
         {
-            var isTaskExist = await _taskService.IsTaskExist(taskId);
-            if (!isTaskExist)
-                return NotFound();
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
-            var tasksToTeamsToDelete = tasksToTeams.Where(tt => tt.TaskId == taskId);
-
-            foreach (var taskToTeam in tasksToTeamsToDelete)
+            try
             {
-                try
+
+                var isTaskExist = await _taskService.IsTaskExist(taskId);
+                if (!isTaskExist)
+                    return NotFound();
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
+                var tasksToTeamsToDelete = tasksToTeams.Where(tt => tt.TaskId == taskId);
+
+                foreach (var taskToTeam in tasksToTeamsToDelete)
                 {
                     await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, ex.Message);
-                }
+
+                return NoContent();
+
             }
-            return NoContent();
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
         [HttpDelete]
@@ -174,32 +180,32 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int newStatus, [FromQuery] int taskId, [FromQuery] int teamId)
         {
-            var isTaskExist = await _taskService.IsTaskExist(taskId);
-            if (!isTaskExist)
-                return NotFound();
-
-            var isTeamExist = await _teamService.TeamExists(teamId);
-            if (!isTeamExist)
-                return NotFound();
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
-            var tasksToTeamsToDelete = tasksToTeams.Where(tt => (tt.TaskId == taskId) && (tt.TeamId == teamId));
-
-            foreach (var taskToTeam in tasksToTeamsToDelete)
+            try
             {
-                try
+                var isTaskExist = await _taskService.IsTaskExist(taskId);
+                if (!isTaskExist)
+                    return NotFound();
+
+                var isTeamExist = await _teamService.TeamExists(teamId);
+                if (!isTeamExist)
+                    return NotFound();
+
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
+                var tasksToTeamsToDelete = tasksToTeams.Where(tt => (tt.TaskId == taskId) && (tt.TeamId == teamId));
+
+                foreach (var taskToTeam in tasksToTeamsToDelete)
                 {
                     await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
                 }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, ex.Message);
-                }
+                return NoContent();
             }
-            return NoContent();
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
     }
 }

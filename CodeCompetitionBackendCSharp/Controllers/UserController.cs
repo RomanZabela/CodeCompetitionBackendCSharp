@@ -27,25 +27,40 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<UserDto>> GetUsers()
+		[ProducesResponseType(200, Type = typeof(IEnumerable<UserDto>))]
+		public async Task<IActionResult> GetUsers()
         {
-            var users = await _managementApiClient.Users.GetAllAsync(
-                new GetUsersRequest(), new PaginationInfo()
-            );
-            return users.Select(x => new UserDto
+            try
             {
-                Id = x.UserId,
-                Email = x.Email,
-                FirstName = x.FirstName,
-                LastName = x.LastName,
-                Blocked = x.Blocked ?? false
-            });
+				if (!ModelState.IsValid)
+				{
+					return BadRequest(ModelState);
+				}
+
+				var users = await _managementApiClient.Users.GetAllAsync(
+								new GetUsersRequest(), new PaginationInfo()
+							);
+
+				return Ok(users.Select(x => new UserDto
+				{
+					Id = x.UserId,
+					Email = x.Email,
+					FirstName = x.FirstName,
+					LastName = x.LastName,
+					Blocked = x.Blocked ?? false
+				}));
+			}
+            catch(Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }            
 
         }
 
 
         [HttpGet("withRoles")]
-        public async Task<IActionResult> GetUsersWithRoles([FromQuery] UserParameters userParameters)
+		[ProducesResponseType(200, Type = typeof(IEnumerable<UserDtoExtended>))]
+		public async Task<IActionResult> GetUsersWithRoles([FromQuery] UserParameters userParameters)
         {
 
             try
@@ -53,6 +68,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 				var users = await _managementApiClient.Users.GetAllAsync(
 				    new GetUsersRequest(), new PaginationInfo()
 			    );
+
 				List<UserDtoExtended> userList = users.Select(x => new UserDtoExtended
 				{
 					Id = x.UserId,
@@ -105,54 +121,70 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("allRoles")]
-        public async Task<IEnumerable<RoleDto>> GetRoles()
+		[ProducesResponseType(200, Type = typeof(IEnumerable<RoleDto>))]
+		public async Task<IActionResult> GetRoles()
         {
-            var roles = await _managementApiClient.Roles.GetAllAsync(
-                new GetRolesRequest(), new PaginationInfo()
-            );
-
-            return roles.Select(x => new RoleDto
+            try
             {
-                Id = x.Id,
-                Name = x.Name,
-                Description = x.Description
-            });
+				var roles = await _managementApiClient.Roles.GetAllAsync(
+				new GetRolesRequest(), new PaginationInfo()
+			);
+
+				return Ok(roles.Select(x => new RoleDto
+				{
+					Id = x.Id,
+					Name = x.Name,
+					Description = x.Description
+				}));
+			}
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+            
 
         }
 
         [HttpGet("userRoles/{Id}")]
-        public async Task<IEnumerable<RoleDto>> GetUserRolesByUserId(string Id)
+		[ProducesResponseType(200, Type = typeof(IEnumerable<RoleDto>))]
+		public async Task<IActionResult> GetUserRolesByUserId(string Id)
         {
-            var roles = await _managementApiClient.Users.GetRolesAsync(
-                Id, new PaginationInfo()
-            );
-
-            return roles.Select(x => new RoleDto
+            try
             {
-                Id = x.Id,
-                Name = x.Name,
-                Description = x.Description
-            });
+				var roles = await _managementApiClient.Users.GetRolesAsync(
+				Id, new PaginationInfo()
+			);
+
+				return Ok(roles.Select(x => new RoleDto
+				{
+					Id = x.Id,
+					Name = x.Name,
+					Description = x.Description
+				}));
+			}
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
 
         }
 
-
-
         [HttpDelete("deleteRoles/{Id}")]
-        public async Task<IActionResult> DeleteUserRolesByUserId(string Id)
+		[ProducesResponseType(204)]
+
+		public async Task<IActionResult> DeleteUserRolesByUserId(string Id)
         {
-            var rolesToDelete = await _managementApiClient.Users.GetRolesAsync(
-                Id, new PaginationInfo()
-            );
-
-            var rolesIdToDeleteStr = rolesToDelete.Select(x => x.Id).ToArray();
-
             try
             {
+                var rolesToDelete = await _managementApiClient.Users.GetRolesAsync(Id, new PaginationInfo());
+
+                var rolesIdToDeleteStr = rolesToDelete.Select(x => x.Id).ToArray();
+
                 await _managementApiClient.Users.RemoveRolesAsync(
                     Id, new AssignRolesRequest() { Roles = rolesIdToDeleteStr }
                 );
                 return NoContent();
+
             }
             catch (Exception ex)
             {
@@ -161,46 +193,29 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         }
 
-        [HttpPut("assignRoles/{Id}")]
-        public async Task<IActionResult> AssignRoleToUser(string Id, [FromBody] string[] roles)
-        {
+		[HttpPut("assignRoles/{Id}")]
+		[ProducesResponseType(200, Type = typeof(string))]
+		public async Task<IActionResult> AssignRoleToUser(string Id, [FromBody] string[] roles)
+		{
+			try
+			{
+				var rolesToDelete = await _managementApiClient.Users.GetRolesAsync(Id, new PaginationInfo());
 
-            var rolesToDelete = await _managementApiClient.Users.GetRolesAsync(
-                Id, new PaginationInfo()
-            );
+				var rolesIdToDeleteStr = rolesToDelete.Select(x => x.Id).ToArray();
 
-            var rolesIdToDeleteStr = rolesToDelete.Select(x => x.Id).ToArray();
-
-            // Delete all existing roles
-            if (rolesIdToDeleteStr.Length > 0)
-            {
-                try
-                {
-                    await _managementApiClient.Users.RemoveRolesAsync(
-                        Id, new AssignRolesRequest() { Roles = rolesIdToDeleteStr }
-                    );
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, ex.Message);
-                }
-            }
-             
-            // Add new role
-            try
-            {
-                await _managementApiClient.Users.AssignRolesAsync(Id, new AssignRolesRequest() { Roles = roles } );
-                return Ok("Successfully updated");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-    
-
+				if (rolesIdToDeleteStr.Length > 0)
+				{
+					// Delete all existing roles
+					await _managementApiClient.Users.RemoveRolesAsync(Id, new AssignRolesRequest() { Roles = rolesIdToDeleteStr });
+				}
+				// Add new role
+				await _managementApiClient.Users.AssignRolesAsync(Id, new AssignRolesRequest() { Roles = roles });
+				return Ok("Successfully updated");
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+		}
     }
-
 }
-    
-

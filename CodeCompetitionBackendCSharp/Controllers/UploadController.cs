@@ -8,7 +8,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
     public class UploadController : ControllerBase
     {
         [HttpPost]
-        public IActionResult Upload()
+		[ProducesResponseType(204)]
+		[ProducesResponseType(400)]
+		public IActionResult Upload()
         {
             try
             {
