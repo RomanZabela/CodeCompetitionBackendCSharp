@@ -11,7 +11,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    //[Authorize]
+    // [Authorize]
     public class TaskController : Controller
     {
         private readonly ITaskService _taskService;
@@ -58,8 +58,32 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		{
 			try
 			{
-				var taskAsync = await _taskService.GetTasksExtended(taskParameters);
+                taskParameters.switchOff = taskParameters.switchOffString == "1" ? true : false;
+
+                var taskAsync = await _taskService.GetTasksExtended(taskParameters);
 				
+				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+
+				return Ok(taskAsync);
+			}
+			catch (Exception ex)
+			{
+				return StatusCode(500, ex.Message);
+			}
+		}
+
+		[HttpGet("byCompetitionId/{competitionId}")]
+		[Authorize(Roles = "system administrator, competition administrator")]
+
+		[ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+		public async Task<IActionResult> GetTasksByCompetitionId([FromQuery] TaskParameters taskParameters, int competitionId)
+		{
+			try
+			{
+                taskParameters.switchOff = taskParameters.switchOffString == "1" ? true : false;
+
+                var taskAsync = await _taskService.GetTasksByCompetitionId(taskParameters, competitionId);
+
 				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
 
 				return Ok(taskAsync);
@@ -137,7 +161,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 taskParameters.switchOff = true;
 
 				var taskExist = (await _taskService.GetTasks(taskParameters))
-                                                    .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower());
+                                                    .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower()).ToList();
 
                 if (taskExist.Count() > 0)
                 {

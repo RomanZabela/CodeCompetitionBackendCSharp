@@ -7,7 +7,8 @@
         public string TeamLeaderEmail { get; set; }
         public int TotalPoints { get; set; }
         public string CompetitionName { get; set; }
-		public string IconImage { get; set; }
+        public int? CompetitionId { get; set; }
+        public string IconImage { get; set; }
 
 	}
 }

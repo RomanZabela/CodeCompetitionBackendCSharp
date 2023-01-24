@@ -17,10 +17,19 @@ namespace CodeCompetitionBackendCSharp.Services
         {
             _context = context;
         }
-        public async Task<PagedList<Team>> GetTeams(TeamParameters teamParameters)
+        public async Task<PagedList<TeamDto>> GetTeams(TeamParameters teamParameters)
         {
-            var result = await _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active).ToListAsync();
-            return PagedList<Team>.ToPagedList(result, teamParameters.PageNumber, teamParameters.PageSize, teamParameters.switchOff);
+			teamParameters.switchOff = teamParameters.switchOffString == "1" ? true : false;
+			var result = await (from t in _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active)
+								 select new TeamDto
+								 {
+									 Id = t.Id,
+									 TeamName = t.TeamName,
+                                     TeamLeaderId = t.TeamLeaderId,
+									 IconImage = t.IconImage,
+									 TotalPoints = t.TotalPoints,
+								 }).ToListAsync();
+			return PagedList<TeamDto>.ToPagedList(result, teamParameters.PageNumber, teamParameters.PageSize, teamParameters.switchOff);
         }
 
         public async Task<bool> TeamExists(int teamId)
@@ -85,8 +94,8 @@ namespace CodeCompetitionBackendCSharp.Services
         {
             teamsParameters.switchOff = teamsParameters.switchOffString == "1" ? true : false; 
             var results = await (from t in _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active)
-                                 join p in _context.Participants on t.TeamLeaderId equals p.Id
-                                 join c in _context.Competitions on t.CompetitionId equals c.Id
+                                 join p in _context.Participants.Where(t => t.StatusId == (int)Enum.Status.Active) on t.TeamLeaderId equals p.Id
+                                 join c in _context.Competitions.Where(t => t.StatusId == (int)Enum.Status.Active) on t.CompetitionId equals c.Id
                                  select new TeamExtendedDto
                                  {
                                      Id = t.Id,
@@ -94,6 +103,7 @@ namespace CodeCompetitionBackendCSharp.Services
                                      TeamLeaderEmail = p.Email,
 									 IconImage = t.IconImage,
 									 TotalPoints = t.TotalPoints,
+                                     CompetitionId = c.Id,
                                      CompetitionName = c.CompetitionName
                                  }).ToListAsync();
 

@@ -1,6 +1,8 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using CodeCompetitionBackendCSharp.Paging;
+using CodeCompetitionBackendCSharp.RequestFeatures;
 using Microsoft.EntityFrameworkCore;
 
 namespace CodeCompetitionBackendCSharp.Repository
@@ -33,12 +35,12 @@ namespace CodeCompetitionBackendCSharp.Repository
             return result;
         }
 
-        public async Task<ICollection<TaskCategory>> GetTaskCategories()
+        public async Task<PagedList<TaskCategory>> GetTaskCategories(TaskCategoryParameters taskCategoryParameters)
         {
             var result = await _context.TaskCategories
                                         .Where(tc => tc.StatusId == (int)Enum.Status.Active)
                                         .ToListAsync();
-            return result;
+            return PagedList<TaskCategory>.ToPagedList(result, taskCategoryParameters.PageNumber, taskCategoryParameters.PageSize, taskCategoryParameters.switchOff);
         }
 
         public async Task<TaskCategory> GetTaskCategory(int id)

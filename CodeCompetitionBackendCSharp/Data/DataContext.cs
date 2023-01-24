@@ -402,7 +402,6 @@ namespace CodeCompetitionBackendCSharp.Data
                 entity.ToTable("task_to_competition");
 
                 entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
                     .HasColumnName("id");
 
                 entity.Property(e => e.CompetitionId).HasColumnName("competition_id");
@@ -563,11 +562,11 @@ namespace CodeCompetitionBackendCSharp.Data
 
                 entity.Property(e => e.UpdateUserId).HasColumnName("update_user_id");
 
-                entity.HasOne(d => d.Competition)
+                /* entity.HasOne(d => d.Competition)
                     .WithMany(p => p.Teams)
                     .HasForeignKey(d => d.CompetitionId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_team_competition");
+                    .HasConstraintName("FK_team_competition"); */
 
                 entity.HasOne(d => d.CreateUser)
                     .WithMany(p => p.TeamCreateUsers)

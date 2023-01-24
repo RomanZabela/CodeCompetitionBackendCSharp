@@ -2,8 +2,10 @@
 using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
+using CodeCompetitionBackendCSharp.RequestFeatures;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
@@ -25,19 +27,20 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(IEnumerable<TaskCategory>))]
-        public async Task<IActionResult> GetTaskCategories()
+        public async Task<IActionResult> GetTaskCategories([FromQuery] TaskCategoryParameters taskCategoryParameters)
         {
             try
             {
-                var getTaskResult = await _taskCategoryService.GetTaskCategories();
-                var taskCategories = _mapper.Map<List<TaskCategoryDto>>(getTaskResult);
-
+                taskCategoryParameters.switchOff = taskCategoryParameters.switchOffString == "1" ? true : false;
+                var getTaskResult = await _taskCategoryService.GetTaskCategories(taskCategoryParameters);
+                
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);
                 }
 
-                return Ok(taskCategories);
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(getTaskResult.MetaData));
+                return Ok(getTaskResult);
             }
             catch (Exception ex)
             {
@@ -86,11 +89,18 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return BadRequest(ModelState);
             }
 
-            var getTaskCategory = (await _taskCategoryService.GetTaskCategories())
-                                                            .Where(tc => tc.CategoryName.Trim().ToLower() == taskCategory.CategoryName.Trim().ToLower());
+            TaskCategoryParameters taskCategoryParameters = new TaskCategoryParameters
+            {
+                switchOffString = "1",
+                switchOff = true
+            };
+
+            var getTaskCategory = (await _taskCategoryService.GetTaskCategories(taskCategoryParameters))
+                .Where(tc => tc.CategoryName.Trim().ToLower() == taskCategory.CategoryName.Trim().ToLower()).ToList(); 
+            //var getTaskCategory = checkPagingResponse.Items.Where(tc => tc.CategoryName.Trim().ToLower() == taskCategory.CategoryName.Trim().ToLower());
 
 
-            if (getTaskCategory != null)
+            if (getTaskCategory.Count > 0)
             {
                 ModelState.AddModelError("", "Task category already exist in DB");
                 return StatusCode(422, ModelState);

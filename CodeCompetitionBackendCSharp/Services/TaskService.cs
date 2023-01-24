@@ -70,7 +70,26 @@ namespace CodeCompetitionBackendCSharp.Repository
             return PagedList<Models.Task>.ToPagedList(result, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
         }
 
-        public async Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId)
+		public async Task<PagedList<TaskWithCategoryNameDto>> GetTasksByCompetitionId(TaskParameters taskParameters, int competitionId)
+		{
+			var results = await(from t in _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
+								join tc in _context.TaskCategories.Where(t => t.StatusId == (int)Enum.Status.Active) on t.TaskCategoryId equals tc.Id
+                                join ttc in _context.TaskToCompetitions.Where(ttc => ttc.StatusId == (int)Enum.Status.Active && ttc.CompetitionId == competitionId) on t.Id equals ttc.TaskId
+								select new TaskWithCategoryNameDto
+								{
+									Id = t.Id,
+									TaskName = t.TaskName,
+									TaskDescription = t.TaskDescription,
+									TaskContent = t.TaskContent,
+									Timeframe = t.Timeframe,
+									Points = t.Points,
+									TaskCategoryName = tc.CategoryName
+								}).ToListAsync();
+
+			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
+		}
+
+		public async Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId)
         {
             var result = await _context.Tasks.Where(t => t.TaskCategoryId == taskCategoryId
                                                     && t.StatusId == (int)Enum.Status.Active)
@@ -96,7 +115,7 @@ namespace CodeCompetitionBackendCSharp.Repository
                                  .Sort(taskParameters.OrderBy)
                                  .ToListAsync();
 
-			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize);          
+			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);          
 		}
 
 		public async Task<bool> IsTaskExist(int taskId)

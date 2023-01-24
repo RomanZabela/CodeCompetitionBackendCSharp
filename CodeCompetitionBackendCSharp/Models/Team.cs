@@ -20,9 +20,9 @@ namespace CodeCompetitionBackendCSharp.Models
         public int CreateUserId { get; set; }
         public int UpdateUserId { get; set; }
         public int StatusId { get; set; }
-        public int CompetitionId { get; set; }
+        public int? CompetitionId { get; set; }
 
-        public virtual Competition Competition { get; set; } = null!;
+       // public virtual Competition Competition { get; set; } = null!;
         public virtual User CreateUser { get; set; } = null!;
         public virtual Status Status { get; set; } = null!;
         public virtual Participant TeamLeader { get; set; } = null!;
