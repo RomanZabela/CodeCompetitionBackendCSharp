@@ -29,13 +29,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Team>))]
+        [ProducesResponseType(200, Type = typeof(PagedList<TeamDto>))]
         public async Task<IActionResult> GetTeams([FromQuery] TeamParameters teamParameters)
         {
             try
             {
                 var teams = await _teamService.GetTeams(teamParameters);
-                var teamsDto = _mapper.Map<ICollection<TeamDto>>(teams);
+               
                 Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(teams.MetaData));
 
                 if (!ModelState.IsValid)
@@ -43,7 +43,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
                     return BadRequest(ModelState);
                 }
 
-                return Ok(teamsDto);
+                return Ok(teams);
             }
             catch (Exception ex)
             {

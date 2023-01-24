@@ -8,7 +8,7 @@ namespace CodeCompetitionBackendCSharp.Interface
     {
         Task<PagedList<Models.Task>> GetTasks(TaskParameters taskParameters);
 		Task<PagedList<TaskWithCategoryNameDto>> GetTasksExtended(TaskParameters taskParameters);
-
+        Task<PagedList<TaskWithCategoryNameDto>> GetTasksByCompetitionId(TaskParameters taskParameters, int competitionId);
 		Task<Models.Task> GetTaskById(int id);
         Task<Models.Task> GetTaskByName(string name);
         Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId);

@@ -8,7 +8,7 @@ namespace CodeCompetitionBackendCSharp.Models
         public Competition()
         {
             TaskToCompetitions = new HashSet<TaskToCompetition>();
-            Teams = new HashSet<Team>();
+            // Teams = new HashSet<Team>();
         }
 
         public int Id { get; set; }
@@ -29,6 +29,6 @@ namespace CodeCompetitionBackendCSharp.Models
         public virtual Status Status { get; set; } = null!;
         public virtual User UpdateUser { get; set; } = null!;
         public virtual ICollection<TaskToCompetition> TaskToCompetitions { get; set; }
-        public virtual ICollection<Team> Teams { get; set; }
+        // public virtual ICollection<Team> Teams { get; set; }
     }
 }
