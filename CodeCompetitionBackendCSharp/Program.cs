@@ -2,12 +2,19 @@ using CodeCompetitionBackendCSharp.Data;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Repository;
 using CodeCompetitionBackendCSharp.Services;
+using CodeCompetitionBackendCSharp.Services.ServiceExtensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
+using NLog;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
+
+LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(), "/nlog.config"));
+builder.Services.ConfigureLoggerService();
 
 // Add services to the container.
 builder.Services.AddCors(policy =>
@@ -58,12 +65,26 @@ builder.Services.AddDbContext<DataContext>(options =>
 
 var app = builder.Build();
 
+var logger = app.Services.GetRequiredService<ILoggerManager>();
+app.ConfigureExceptionHandler(logger);
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.Use(async (context, next) =>
+{
+	await next();
+
+	if (context.Response.StatusCode == (int)HttpStatusCode.Unauthorized)
+	{
+		logger.LogError($"{context.Response.StatusCode.ToString()} Unauthorized access");
+	};
+
+});
 
 app.UseHttpsRedirection();
 
