@@ -172,7 +172,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [HttpDelete]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int newStatus, [FromQuery] int taskId, [FromQuery] int teamId)
+        public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int taskId, [FromQuery] int teamId)
         {
             var isTaskExist = await _taskService.IsTaskExist(taskId);
             if (!isTaskExist)
@@ -192,7 +192,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
             {
                 try
                 {
-                    await _taskToTeamService.DeleteTeamTask((Enum.TaskStatus)newStatus, taskToTeam);
+                    await _taskToTeamService.DeleteTeamTask(Enum.TaskStatus.Fail, taskToTeam);
                 }
                 catch (Exception ex)
                 {
@@ -201,5 +201,40 @@ namespace CodeCompetitionBackendCSharp.Controllers
             }
             return NoContent();
         }
-    }
+
+		[HttpPut("submit")]
+		[ProducesResponseType(204)]
+		[ProducesResponseType(400)]
+		public async Task<IActionResult> SubmitTask([FromQuery] int taskId, [FromQuery] int teamId, [FromBody] SubmitTaskDataDto submitTaskDataDto)
+		{
+			var isTaskExist = await _taskService.IsTaskExist(taskId);
+			if (!isTaskExist)
+				return NotFound();
+
+			var isTeamExist = await _teamService.TeamExists(teamId);
+			if (!isTeamExist)
+				return NotFound();
+
+			if (!ModelState.IsValid)
+				return BadRequest(ModelState);
+
+			var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
+			var tasksToTeamsToDelete = tasksToTeams.Where(tt => (tt.TaskId == taskId) && (tt.TeamId == teamId));
+
+			foreach (var taskToTeam in tasksToTeamsToDelete)
+			{
+				try
+				{
+                    taskToTeam.GithubUrl = submitTaskDataDto.GithubUrl;
+                    taskToTeam.SubmitterComment = submitTaskDataDto.SubmitterComment;
+                    await _taskToTeamService.SubmitTask(taskToTeam);
+				}
+				catch (Exception ex)
+				{
+					return StatusCode(500, ex.Message);
+				}
+			}
+			return NoContent();
+		}
+	}
 }
