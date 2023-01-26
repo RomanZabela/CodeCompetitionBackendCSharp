@@ -18,7 +18,9 @@ namespace CodeCompetitionBackendCSharp.Models
         public int CreateUserId { get; set; }
         public int UpdateUserId { get; set; }
         public int? ReachedScore { get; set; }
-
+        public string? GithubUrl { get; set; }
+        public string? SubmitterComment { get; set; }
+        public string? CompetitionAdminComment { get; set; }
         public virtual User CreateUser { get; set; } = null!;
         public virtual Participant ParticipantIdForTaskNavigation { get; set; } = null!;
         public virtual Status Status { get; set; } = null!;

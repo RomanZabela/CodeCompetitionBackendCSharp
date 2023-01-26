@@ -10,12 +10,14 @@ namespace CodeCompetitionBackendCSharp.Interface
 		Task<PagedList<TaskWithCategoryNameDto>> GetTasksExtended(TaskParameters taskParameters);
         Task<PagedList<TaskWithCategoryNameDto>> GetTasksByCompetitionId(TaskParameters taskParameters, int competitionId);
 		Task<Models.Task> GetTaskById(int id);
+        Task<PagedList<TaskWithTimesDto>> GetTasksByTeamIdInProgress(TaskParameters taskParameters, int teamId);
+        Task<PagedList<TaskWithTimesDto>> GetTasksByTeamIdSubmitted(TaskParameters taskParameters, int teamId);
         Task<Models.Task> GetTaskByName(string name);
         Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId);
         Task<bool> IsTaskExist(int id);
         Task<bool> AddTask(Models.Task task);
         Task<bool> UpdateTask(Models.Task task);
-        Task<bool> DeleteTask(Models.Task task);
+		Task<bool> DeleteTask(Models.Task task);
         Task<bool> Save();
         Task<CompetitionDto> GetCompetitionStatusFromNodeJS(int competitionId);
     }
