@@ -44,10 +44,11 @@ namespace CodeCompetitionBackendCSharp.Services
             _context.Attach(taskToTeam);
 
             _context.Entry(taskToTeam).Property(tt => tt.UpdateDate).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.EndTime).IsModified = true;
             _context.Entry(taskToTeam).Property(tt => tt.UpdateUserId).IsModified = true;
-            _context.Entry(taskToTeam).Property(tt => tt.StatusId).IsModified = true;
+			_context.Entry(taskToTeam).Property(tt => tt.TaskStatusId).IsModified = true;
 
-            return await Save();
+			return await Save();
         }
 
         public async Task<int> GetTaskCountByTeamId(int teamId)
@@ -66,5 +67,25 @@ namespace CodeCompetitionBackendCSharp.Services
             int saved = await _context.SaveChangesAsync();
             return saved > 0 ? true : false;
         }
-    }
+
+		public async Task<bool> SubmitTask(TaskToTeam taskToTeam)
+		{
+			taskToTeam.UpdateDate = DateTime.Now;
+			taskToTeam.EndTime = DateTime.Now;
+			taskToTeam.UpdateUserId = Enum.TEMP_USER_ID;
+			taskToTeam.TaskStatusId = (int)Enum.TaskStatus.Submitted;
+
+			_context.Attach(taskToTeam);
+
+			_context.Entry(taskToTeam).Property(tt => tt.UpdateDate).IsModified = true;
+			_context.Entry(taskToTeam).Property(tt => tt.EndTime).IsModified = true;
+			_context.Entry(taskToTeam).Property(tt => tt.UpdateUserId).IsModified = true;
+			_context.Entry(taskToTeam).Property(tt => tt.TaskStatusId).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.GithubUrl).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.SubmitterComment).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.CompetitionAdminComment).IsModified = true;
+
+            return await Save();
+		}
+	}
 }

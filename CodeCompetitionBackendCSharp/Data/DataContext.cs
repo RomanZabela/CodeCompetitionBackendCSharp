@@ -481,6 +481,12 @@ namespace CodeCompetitionBackendCSharp.Data
 
                 entity.Property(e => e.TeamId).HasColumnName("team_id");
 
+                entity.Property(e => e.GithubUrl).HasColumnName("github_url");
+
+                entity.Property(e => e.SubmitterComment).HasColumnName("submitter_comment");
+
+                entity.Property(e => e.CompetitionAdminComment).HasColumnName("competition_admin_comment");
+
                 entity.Property(e => e.UpdateDate)
                     .HasColumnType("datetime")
                     .HasColumnName("update_date");
