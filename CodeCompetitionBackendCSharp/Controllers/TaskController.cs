@@ -51,7 +51,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 
 		[HttpGet("extended")]
-        [Authorize(Roles = "system administrator, competition administrator")]
+        [Authorize(Roles = "system administrator, competition administrator, participant")]
 
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
 		public async Task<IActionResult> GetTasksExtended([FromQuery] TaskParameters taskParameters)
@@ -72,7 +72,51 @@ namespace CodeCompetitionBackendCSharp.Controllers
 			}
 		}
 
-		[HttpGet("byCompetitionId/{competitionId}")]
+        [HttpGet("byTeamId/{teamId}")]
+        [Authorize(Roles = "system administrator, competition administrator, participant")]
+
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+        public async Task<IActionResult> GetTasksByTeamId([FromQuery] TaskParameters taskParameters, int teamId)
+        {
+            try
+            {
+                taskParameters.switchOff = taskParameters.switchOffString == "1" ? true : false;
+
+                var taskAsync = await _taskService.GetTasksByTeamIdInProgress(taskParameters, teamId);
+
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+
+                return Ok(taskAsync);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("submitted/byTeamId/{teamId}")]
+        [Authorize(Roles = "system administrator, competition administrator, participant")]
+
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+        public async Task<IActionResult> GetSubmittedTasksByTeamId([FromQuery] TaskParameters taskParameters, int teamId)
+        {
+            try
+            {
+                taskParameters.switchOff = taskParameters.switchOffString == "1" ? true : false;
+
+                var taskAsync = await _taskService.GetTasksByTeamIdSubmitted(taskParameters, teamId);
+
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+
+                return Ok(taskAsync);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("byCompetitionId/{competitionId}")]
 		[Authorize(Roles = "system administrator, competition administrator")]
 
 		[ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
@@ -163,7 +207,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 				var taskExist = (await _taskService.GetTasks(taskParameters))
                                                     .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower()).ToList();
 
-                if (taskExist.Count() > 0)
+                if (taskExist.Count > 0)
                 {
                     ModelState.AddModelError("", "Task with the same name already exist in DB");
                     return StatusCode(422, ModelState);

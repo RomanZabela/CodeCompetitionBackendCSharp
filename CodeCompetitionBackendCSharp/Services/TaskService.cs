@@ -6,6 +6,9 @@ using CodeCompetitionBackendCSharp.Paging;
 using CodeCompetitionBackendCSharp.RequestFeatures;
 using CodeCompetitionBackendCSharp.Services.ServiceExtensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace CodeCompetitionBackendCSharp.Repository
 {
@@ -62,6 +65,8 @@ namespace CodeCompetitionBackendCSharp.Repository
             return result;
         }
 
+       
+
         public async Task<PagedList<Models.Task>> GetTasks(TaskParameters taskParameters)
         {
             var result = await _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
@@ -97,7 +102,58 @@ namespace CodeCompetitionBackendCSharp.Repository
             return result;
         }
 
-		public async Task<PagedList<TaskWithCategoryNameDto>> GetTasksExtended(TaskParameters taskParameters)
+        public async Task<PagedList<TaskWithTimesDto>> GetTasksByTeamIdInProgress(TaskParameters taskParameters, int teamId)
+        {
+            var results = await(from t in _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
+                                join ttm in _context.TaskToTeams.Where(ttm => ttm.StatusId == (int)Enum.Status.Active && ttm.TeamId == teamId && ttm.TaskStatusId == (int)Enum.TaskStatus.InProgress) on t.Id equals ttm.TaskId
+                                join p in _context.Participants.Where(p => p.StatusId == (int)Enum.Status.Active) on ttm.ParticipantIdForTask equals p.Id
+                                join tc in _context.TaskCategories.Where(tc => tc.StatusId == (int)Enum.Status.Active) on t.TaskCategoryId equals tc.Id
+                                select new TaskWithTimesDto
+                                {
+                                    Id = t.Id,
+                                    TaskName = t.TaskName,
+                                    TaskDescription = t.TaskDescription,
+                                    TaskContent = t.TaskContent,
+                                    Timeframe = t.Timeframe,
+                                    Points = t.Points,
+                                    TaskCategoryName = tc.CategoryName,
+                                    StartTime = ttm.StartTime,
+                                    EndTime = ttm.EndTime,
+                                    ParticipantIdForTask = ttm.ParticipantIdForTask,
+                                    ParticipantEmailForTask = p.Email,
+                                    TaskStatusId = ttm.TaskStatusId
+                                }).ToListAsync();
+
+            return PagedList<TaskWithTimesDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
+        }
+
+        public async Task<PagedList<TaskWithTimesDto>> GetTasksByTeamIdSubmitted(TaskParameters taskParameters, int teamId)
+        {
+            var results = await(from t in _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
+                                join ttm in _context.TaskToTeams.Where(ttm => ttm.StatusId == (int)Enum.Status.Active && ttm.TeamId == teamId && ttm.TaskStatusId != (int)Enum.TaskStatus.InProgress) on t.Id equals ttm.TaskId
+                                join p in _context.Participants.Where(p => p.StatusId == (int)Enum.Status.Active) on ttm.ParticipantIdForTask equals p.Id
+                                join tc in _context.TaskCategories.Where(tc => tc.StatusId == (int)Enum.Status.Active) on t.TaskCategoryId equals tc.Id
+                                select new TaskWithTimesDto
+                                {
+                                    Id = t.Id,
+                                    TaskName = t.TaskName,
+                                    TaskDescription = t.TaskDescription,
+                                    TaskContent = t.TaskContent,
+                                    Timeframe = t.Timeframe,
+                                    Points = t.Points,
+                                    TaskCategoryName = tc.CategoryName,
+                                    StartTime = ttm.StartTime,
+                                    EndTime = ttm.EndTime,
+                                    ParticipantIdForTask = ttm.ParticipantIdForTask,
+                                    ParticipantEmailForTask = p.Email,
+                                    TaskStatusId = ttm.TaskStatusId,
+                                    ReachedScore = ttm.ReachedScore
+                                }).ToListAsync();
+
+            return PagedList<TaskWithTimesDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
+        }
+
+        public async Task<PagedList<TaskWithCategoryNameDto>> GetTasksExtended(TaskParameters taskParameters)
 		{
 			var results = await (from t in _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
                                  join tc in _context.TaskCategories on t.TaskCategoryId equals tc.Id
@@ -131,7 +187,7 @@ namespace CodeCompetitionBackendCSharp.Repository
             return saved > 0 ? true : false;
         }
 
-        public Task<bool> UpdateTask(Models.Task task)
+		public Task<bool> UpdateTask(Models.Task task)
         {
             _context.Attach(task);
 
