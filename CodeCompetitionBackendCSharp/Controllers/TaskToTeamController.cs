@@ -292,7 +292,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 				if (!ModelState.IsValid)
 				{
-					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					_logger.LogError($"400. Bad Request. {ModelState}");
 					return BadRequest(ModelState);
 				};
 
@@ -306,7 +306,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 				if (!ModelState.IsValid)
 				{
-					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					_logger.LogError($"400. Bad Request. {ModelState}");
 					return BadRequest(ModelState);
 				};
 
