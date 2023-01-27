@@ -2,9 +2,9 @@
 {
 	public class UserParameters
 	{
-		public bool switchOff { get; set; } = false;
+		public bool SwitchOff { get; set; } = false;
 
-		public string switchOffString { get; set; } = "0";
+		public string SwitchOffString { get; set; } = "0";
 
 		const int maxPageSize = 50;
 		public int PageNumber { get; set; } = 1;

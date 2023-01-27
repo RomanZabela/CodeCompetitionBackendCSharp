@@ -22,7 +22,7 @@ namespace CodeCompetitionBackendCSharp.Paging
 		public static PagedList<T> ToPagedList(IEnumerable<T> source, int pageNumber, int pageSize, bool switchedOff = false)
 		{
 			List<T> items;
-			int count = 0;
+			int count;
 
 			if (switchedOff)
 			{

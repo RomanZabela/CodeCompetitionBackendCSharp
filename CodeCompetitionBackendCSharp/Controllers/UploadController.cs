@@ -18,6 +18,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
 		[HttpPost]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(204)]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
@@ -34,7 +36,14 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 
                 if (file.Length > 0)
                 {
-                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName.Trim('"');
+                    var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName?.Trim('"');
+
+                    if (fileName == null) 
+                    {
+						_logger.LogError($"400. Bad Request. {ModelState}");
+						return BadRequest(ModelState);
+					}
+
                     var fullPath = Path.Combine(pathToSave, fileName);
                     var dbPath = Path.Combine(folderName, fileName);
                     using (var stream = new FileStream(fullPath, FileMode.Create))

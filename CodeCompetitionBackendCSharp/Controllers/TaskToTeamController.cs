@@ -37,7 +37,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(List<Team>))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(List<Team>))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(500)]
@@ -67,7 +69,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("tasksCount/{teamId}")]
-        [ProducesResponseType(200, Type = typeof(int))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(int))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(500)]
@@ -96,7 +100,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(409)]
@@ -147,7 +153,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 
         [HttpDelete("deleteByTeamId/{teamId}")]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
@@ -206,7 +214,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpDelete("deleteByTaskId/{taskId}")]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(404)]
@@ -264,11 +274,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpDelete]
-        [ProducesResponseType(204)]
-        [ProducesResponseType(400)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
 
+		[ProducesResponseType(204)]
+        [ProducesResponseType(400)]
         [ProducesResponseType(401)]
-        [ProducesResponseType(500)]
+		[ProducesResponseType(404)]
+		[ProducesResponseType(500)]
 
         public async Task<IActionResult> DeleteTeamTaskByTaskIdAndTeamId([FromQuery] int newStatus, [FromQuery] int taskId, [FromQuery] int teamId)
 
@@ -281,7 +293,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+                    _logger.LogError($"400. Bad Request. {ModelState}");
                     return BadRequest(ModelState);
                 };
 
@@ -332,38 +344,102 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
 		[HttpPut("submit")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(204)]
 		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(404)]
+		[ProducesResponseType(500)]
 		public async Task<IActionResult> SubmitTask([FromQuery] int taskId, [FromQuery] int teamId, [FromBody] SubmitTaskDataDto submitTaskDataDto)
 		{
-			var isTaskExist = await _taskService.IsTaskExist(taskId);
-			if (!isTaskExist)
-				return NotFound();
+            _logger.LogDebug($"SubmitTask TaskID: {taskId}, teamID: {teamId}, SubmitTaskDataDto{JsonConvert.SerializeObject(submitTaskDataDto)} started.");
 
-			var isTeamExist = await _teamService.TeamExists(teamId);
-			if (!isTeamExist)
-				return NotFound();
-
-			if (!ModelState.IsValid)
+            if (submitTaskDataDto == null)
+            {
+				_logger.LogError($"400. Bad Request. {ModelState}");
 				return BadRequest(ModelState);
-
-			var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
-			var tasksToTeamsToDelete = tasksToTeams.Where(tt => (tt.TaskId == taskId) && (tt.TeamId == teamId));
-
-			foreach (var taskToTeam in tasksToTeamsToDelete)
-			{
-				try
-				{
-					taskToTeam.GithubUrl = submitTaskDataDto.GithubUrl;
-					taskToTeam.SubmitterComment = submitTaskDataDto.SubmitterComment;
-					await _taskToTeamService.SubmitTask(taskToTeam);
-				}
-				catch (Exception ex)
-				{
-					return StatusCode(500, ex.Message);
-				}
 			}
-			return NoContent();
+
+            try
+            {
+				var isTaskExist = await _taskService.IsTaskExist(taskId);
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				};
+
+				if (!isTaskExist)
+                {
+					_logger.LogError($"404. Task {taskId} couldn't found.");
+					return NotFound();
+				}
+					
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
+			}
+
+            try
+            {
+				var isTeamExist = await _teamService.TeamExists(teamId);
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				};
+
+				if (!isTeamExist)
+                {
+					_logger.LogError($"404. Team {teamId} couldn't found.");
+					return NotFound();
+				}
+					
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
+			}
+
+            try
+            {
+                var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogError($"400. Bad Request. {ModelState}");
+                    return BadRequest(ModelState);
+                };
+
+                var tasksToTeamsToDelete = tasksToTeams.Where(tt => (tt.TaskId == taskId) && (tt.TeamId == teamId));
+
+                foreach (var taskToTeam in tasksToTeamsToDelete)
+                {
+                    taskToTeam.GithubUrl = submitTaskDataDto.GithubUrl;
+                    taskToTeam.SubmitterComment = submitTaskDataDto.SubmitterComment;
+
+                    await _taskToTeamService.SubmitTask(taskToTeam);
+
+                    if (!ModelState.IsValid)
+                    {
+                        _logger.LogError($"400. Bad Request. {ModelState}");
+                        return BadRequest(ModelState);
+                    };
+                };
+
+				_logger.LogInfo($"204. TaskToTeam with TaskId {taskId} and TeamId {teamId} submitted.");
+				return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"500. {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
 		}
 	}
 }

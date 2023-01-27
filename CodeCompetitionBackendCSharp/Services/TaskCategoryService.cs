@@ -40,7 +40,7 @@ namespace CodeCompetitionBackendCSharp.Repository
             var result = await _context.TaskCategories
                                         .Where(tc => tc.StatusId == (int)Enum.Status.Active)
                                         .ToListAsync();
-            return PagedList<TaskCategory>.ToPagedList(result, taskCategoryParameters.PageNumber, taskCategoryParameters.PageSize, taskCategoryParameters.switchOff);
+            return PagedList<TaskCategory>.ToPagedList(result, taskCategoryParameters.PageNumber, taskCategoryParameters.PageSize, taskCategoryParameters.SwitchOff);
         }
 
         public async Task<TaskCategory> GetTaskCategory(int id)

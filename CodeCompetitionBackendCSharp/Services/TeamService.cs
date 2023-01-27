@@ -19,7 +19,7 @@ namespace CodeCompetitionBackendCSharp.Services
         }
         public async Task<PagedList<TeamDto>> GetTeams(TeamParameters teamParameters)
         {
-			teamParameters.switchOff = teamParameters.switchOffString == "1" ? true : false;
+			teamParameters.SwitchOff = teamParameters.SwitchOffString == "1" ? true : false;
 			var result = await (from t in _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active)
 								 select new TeamDto
 								 {
@@ -29,7 +29,7 @@ namespace CodeCompetitionBackendCSharp.Services
 									 IconImage = t.IconImage,
 									 TotalPoints = t.TotalPoints,
 								 }).ToListAsync();
-			return PagedList<TeamDto>.ToPagedList(result, teamParameters.PageNumber, teamParameters.PageSize, teamParameters.switchOff);
+			return PagedList<TeamDto>.ToPagedList(result, teamParameters.PageNumber, teamParameters.PageSize, teamParameters.SwitchOff);
         }
 
         public async Task<bool> TeamExists(int teamId)
@@ -92,7 +92,7 @@ namespace CodeCompetitionBackendCSharp.Services
 
         public async Task<PagedList<TeamExtendedDto>> GetTeamsExtended(TeamParameters teamsParameters)
         {
-            teamsParameters.switchOff = teamsParameters.switchOffString == "1" ? true : false; 
+            teamsParameters.SwitchOff = teamsParameters.SwitchOffString == "1" ? true : false; 
             var results = await (from t in _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active)
                                  join p in _context.Participants.Where(t => t.StatusId == (int)Enum.Status.Active) on t.TeamLeaderId equals p.Id
                                  join c in _context.Competitions.Where(t => t.StatusId == (int)Enum.Status.Active) on t.CompetitionId equals c.Id
@@ -107,7 +107,7 @@ namespace CodeCompetitionBackendCSharp.Services
                                      CompetitionName = c.CompetitionName
                                  }).ToListAsync();
 
-            return PagedList<TeamExtendedDto>.ToPagedList(results, teamsParameters.PageNumber, teamsParameters.PageSize, teamsParameters.switchOff);
+            return PagedList<TeamExtendedDto>.ToPagedList(results, teamsParameters.PageNumber, teamsParameters.PageSize, teamsParameters.SwitchOff);
         }
     }
 }

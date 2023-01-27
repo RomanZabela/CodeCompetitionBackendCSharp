@@ -35,7 +35,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(PagedList<TeamDto>))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(PagedList<TeamDto>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(500)]
@@ -68,7 +70,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("extended")]
-        [ProducesResponseType(200, Type = typeof(PagedList<TeamExtendedDto>))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(PagedList<TeamExtendedDto>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(500)]
@@ -100,7 +104,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("{teamId}")]
-        [ProducesResponseType(200, Type = typeof(Models.Team))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(Models.Team))]
         [ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(404)]
@@ -146,15 +152,20 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("teamByParticipant/{participantId}")]
-        [ProducesResponseType(200, Type = typeof(Models.Team))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(Team))]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> GetTeamByParticipantId(int participantId)
+		[ProducesResponseType(401)]
+		[ProducesResponseType(404)]
+		[ProducesResponseType(500)]
+
+		public async Task<IActionResult> GetTeamByParticipantId(int participantId)
         {
             _logger.LogDebug($"GetTeamByParticipantId {participantId} started");
 
             try
-            {
-                
+            {                
                 Team team = await _teamService.GetTeamByParticipantId(participantId);
 
 				if (!ModelState.IsValid)
@@ -176,7 +187,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(409)]
@@ -194,7 +207,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 			try
             {
                 TeamParameters teamParameters = new TeamParameters();
-                teamParameters.switchOff = true;
+                teamParameters.SwitchOff = true;
                 var teamsRepeated = await _teamService.GetTeams(teamParameters);
 
 				if (!ModelState.IsValid)
@@ -246,7 +259,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpPut("{teamId}")]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(500)]
@@ -323,7 +338,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpDelete("{teamId}")]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(404)]
@@ -410,6 +427,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
 						return BadRequest(ModelState);
 					}
 				}
+
+				_logger.LogInfo($"204. Team {teamId} deleted.");
+				return NoContent();
 			}
 
 			catch (Exception ex)
@@ -417,8 +437,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
 				_logger.LogError($"500. {ex.Message}");
 				return StatusCode(500, ex.Message);
 			}
-
-			return NoContent(); 
         }
     }
 }

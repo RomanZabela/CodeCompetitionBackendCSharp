@@ -72,7 +72,7 @@ namespace CodeCompetitionBackendCSharp.Repository
             var result = await _context.Tasks.Where(t => t.StatusId == (int)Enum.Status.Active)
                                 .OrderBy(t => t.Id)
                                 .ToListAsync();
-            return PagedList<Models.Task>.ToPagedList(result, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
+            return PagedList<Models.Task>.ToPagedList(result, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.SwitchOff);
         }
 
 		public async Task<PagedList<TaskWithCategoryNameDto>> GetTasksByCompetitionId(TaskParameters taskParameters, int competitionId)
@@ -91,7 +91,7 @@ namespace CodeCompetitionBackendCSharp.Repository
 									TaskCategoryName = tc.CategoryName
 								}).ToListAsync();
 
-			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
+			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.SwitchOff);
 		}
 
 		public async Task<ICollection<Models.Task>> GetTasksByTaskCategory(int taskCategoryId)
@@ -124,7 +124,7 @@ namespace CodeCompetitionBackendCSharp.Repository
                                     TaskStatusId = ttm.TaskStatusId
                                 }).ToListAsync();
 
-            return PagedList<TaskWithTimesDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
+            return PagedList<TaskWithTimesDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.SwitchOff);
         }
 
         public async Task<PagedList<TaskWithTimesDto>> GetTasksByTeamIdSubmitted(TaskParameters taskParameters, int teamId)
@@ -150,7 +150,7 @@ namespace CodeCompetitionBackendCSharp.Repository
                                     ReachedScore = ttm.ReachedScore
                                 }).ToListAsync();
 
-            return PagedList<TaskWithTimesDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);
+            return PagedList<TaskWithTimesDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.SwitchOff);
         }
 
         public async Task<PagedList<TaskWithCategoryNameDto>> GetTasksExtended(TaskParameters taskParameters)
@@ -171,7 +171,7 @@ namespace CodeCompetitionBackendCSharp.Repository
                                  .Sort(taskParameters.OrderBy)
                                  .ToListAsync();
 
-			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.switchOff);          
+			return PagedList<TaskWithCategoryNameDto>.ToPagedList(results, taskParameters.PageNumber, taskParameters.PageSize, taskParameters.SwitchOff);          
 		}
 
 		public async Task<bool> IsTaskExist(int taskId)

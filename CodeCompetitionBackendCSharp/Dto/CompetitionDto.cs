@@ -2,10 +2,10 @@
 {
     public class CompetitionDto
     {
-        public string competitionName { get; set; }
-        public int maxTaskPerGroups { get; set; }
-        public int competitionStatus { get; set; }
-        public string CompetitionAdministratorId { get; set; }
+        public string CompetitionName { get; set; } = string.Empty;
+        public int MaxTaskPerGroups { get; set; }
+        public int CompetitionStatus { get; set; }
+        public string CompetitionAdministratorId { get; set; } = string.Empty;
 
     }
 }

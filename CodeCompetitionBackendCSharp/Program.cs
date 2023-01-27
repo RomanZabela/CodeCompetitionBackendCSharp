@@ -5,18 +5,17 @@ using CodeCompetitionBackendCSharp.Services;
 using CodeCompetitionBackendCSharp.Services.ServiceExtensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Logging;
 using NLog;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//Configure NLoger
 LogManager.LoadConfiguration(string.Concat(Directory.GetCurrentDirectory(), "/nlog.config"));
 builder.Services.ConfigureLoggerService();
 
-// Add services to the container.
+// Configure Cors
 builder.Services.AddCors(policy =>
 {
 	policy.AddPolicy("CorsPolicy", opt => opt
@@ -26,6 +25,7 @@ builder.Services.AddCors(policy =>
 		.WithExposedHeaders("X-Pagination"));
 });
 
+//Configure Authentication for check token
 builder.Services.AddAuthentication(options =>
 {
 	options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -36,6 +36,7 @@ builder.Services.AddAuthentication(options =>
 	options.Audience = builder.Configuration["Auth0:ApiIdentifier"];
 });
 
+//configure Auth0 for Managment API
 builder.Services.AddAuth0AuthenticationClient(config =>
 {
 	config.Domain = builder.Configuration["Auth0:Domain"];
@@ -55,7 +56,6 @@ builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<ITaskToCompetitionService, TaskToCompetitionService>();
 builder.Services.AddScoped<ITaskToTeamService, TaskToTeamService>();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataContext>(options =>
@@ -68,20 +68,20 @@ var app = builder.Build();
 var logger = app.Services.GetRequiredService<ILoggerManager>();
 app.ConfigureExceptionHandler(logger);
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+//Catching 401 Status for loging
 app.Use(async (context, next) =>
 {
 	await next();
 
 	if (context.Response.StatusCode == (int)HttpStatusCode.Unauthorized)
 	{
-		logger.LogError($"{context.Response.StatusCode.ToString()} Unauthorized access");
+		logger.LogError($"{context.Response.StatusCode} Unauthorized access");
 	};
 
 });
@@ -93,6 +93,7 @@ app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
+//Using static files for store images
 app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions()
 {
