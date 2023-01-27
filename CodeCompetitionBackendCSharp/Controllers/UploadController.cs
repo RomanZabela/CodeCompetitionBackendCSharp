@@ -1,20 +1,37 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CodeCompetitionBackendCSharp.Interface;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
     [Route("api/upload")]
     [ApiController]
+    [Authorize]
     public class UploadController : ControllerBase
     {
-        [HttpPost]
-        public IActionResult Upload()
+		private readonly ILoggerManager _logger;
+
+		public UploadController(ILoggerManager logger)
+		{
+			_logger = logger;
+		}
+
+		[HttpPost]
+		[ProducesResponseType(204)]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+		public IActionResult Upload()
         {
+            _logger.LogDebug($"Upload file started.");
+
             try
             {
                 var file = Request.Form.Files[0];
                 var folderName = Path.Combine("StaticFiles", "Images");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                
                 if (file.Length > 0)
                 {
                     var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName.Trim('"');
@@ -24,16 +41,20 @@ namespace CodeCompetitionBackendCSharp.Controllers
                     {
                         file.CopyTo(stream);
                     }
-                    return Ok(dbPath);
+
+					_logger.LogInfo($"200. File added {dbPath}");
+					return Ok(dbPath);
                 }
                 else
                 {
-                    return BadRequest();
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
                 }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex}");
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, $"Internal server error: {ex}");
             }
         }
     }

@@ -5,73 +5,96 @@ using CodeCompetitionBackendCSharp.Models;
 using CodeCompetitionBackendCSharp.Paging;
 using CodeCompetitionBackendCSharp.RequestFeatures;
 using CodeCompetitionBackendCSharp.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
     [Route("[controller]")]
     [ApiController]
+    [Authorize]
     public class TeamController : Controller
     {
         private readonly ITeamService _teamService;
         private readonly ITaskToTeamService _taskToTeamService;
         private readonly IMapper _mapper;
+		private readonly ILoggerManager _logger;
 
-        public TeamController(
+		public TeamController(
             ITeamService teamService,
             ITaskToTeamService taskToTeamService,
-            IMapper mapper)
+            IMapper mapper,
+            ILoggerManager logger)
         {
             _mapper = mapper;
-            _teamService = teamService;
+			_logger = logger;
+			_teamService = teamService;
             _taskToTeamService = taskToTeamService;
         }
 
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(PagedList<TeamDto>))]
-        public async Task<IActionResult> GetTeams([FromQuery] TeamParameters teamParameters)
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> GetTeams([FromQuery] TeamParameters teamParameters)
         {
-            try
+			
+            _logger.LogDebug($"GetTeams {JsonConvert.SerializeObject(teamParameters)} started.");
+
+			try
             {
                 var teams = await _teamService.GetTeams(teamParameters);
-               
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
+
                 Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(teams.MetaData));
 
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                return Ok(teams);
+				_logger.LogInfo($"200. Teams: {JsonConvert.SerializeObject(teams)}.");
+				return Ok(teams);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
 
         }
 
         [HttpGet("extended")]
         [ProducesResponseType(200, Type = typeof(PagedList<TeamExtendedDto>))]
-        public async Task<IActionResult> GetTeamsExtended([FromQuery] TeamParameters teamParameters)
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> GetTeamsExtended([FromQuery] TeamParameters teamParameters)
         {
+            _logger.LogDebug($"GetTeamsExtended {teamParameters} started");
+
             try
             {
                 var teams = await _teamService.GetTeamsExtended(teamParameters);
-                
-                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(teams.MetaData));
 
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
 
-                return Ok(teams);
+				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(teams.MetaData));
+
+				_logger.LogInfo($"200. Teams: {JsonConvert.SerializeObject(teams)}.");
+				return Ok(teams);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
 
         }
@@ -79,29 +102,46 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [HttpGet("{teamId}")]
         [ProducesResponseType(200, Type = typeof(Models.Team))]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> GetTeam(int teamId)
+		[ProducesResponseType(401)]
+		[ProducesResponseType(404)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> GetTeam(int teamId)
         {
+            _logger.LogDebug($"GetTeam {teamId} started");
+
             try
             {
                 bool isExist = await _teamService.TeamExists(teamId);
-                if (!isExist)
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
+
+				if (!isExist)
                 {
-                    return NotFound();
+					_logger.LogError($"404. Team {teamId} couldn't found.");
+					return NotFound();
                 }
 
                 Team team = await _teamService.GetTeam(teamId);
-                TeamDto teamDto = _mapper.Map<TeamDto>(team);
 
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
 
-                return Ok(teamDto);
+				TeamDto teamDto = _mapper.Map<TeamDto>(team);
+
+				_logger.LogInfo($"200. Team {JsonConvert.SerializeObject(teamDto)}.");
+				return Ok(teamDto);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
@@ -110,52 +150,72 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> GetTeamByParticipantId(int participantId)
         {
+            _logger.LogDebug($"GetTeamByParticipantId {participantId} started");
+
             try
             {
+                
                 Team team = await _teamService.GetTeamByParticipantId(participantId);
-                TeamDto teamDto = _mapper.Map<TeamDto>(team);
 
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
 
-                return Ok(teamDto);
+				TeamDto teamDto = _mapper.Map<TeamDto>(team);
+
+				_logger.LogInfo($"200. Team {JsonConvert.SerializeObject(teamDto)}.");
+				return Ok(teamDto);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }   
         }
 
         [HttpPost]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> CreateTeam([FromBody] TeamDto teamCreate)
+		[ProducesResponseType(401)]
+		[ProducesResponseType(409)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> CreateTeam([FromBody] TeamDto teamCreate)
         {
-            if (teamCreate == null)
-                return BadRequest(ModelState);
+            _logger.LogDebug($"CreateTeam {JsonConvert.SerializeObject(teamCreate)} started");
 
-            try
+			if (teamCreate == null)
+			{
+				_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+				return BadRequest(ModelState);
+			}
+
+			try
             {
                 TeamParameters teamParameters = new TeamParameters();
                 teamParameters.switchOff = true;
                 var teamsRepeated = await _teamService.GetTeams(teamParameters);
-                var teamsRepeatedFiltered = teamsRepeated.Where(c => c.TeamName.Trim().ToUpper() == teamCreate.TeamName.TrimEnd().ToUpper()).FirstOrDefault();
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
+
+				var teamsRepeatedFiltered = teamsRepeated.Where(c => c.TeamName.Trim().ToUpper() == teamCreate.TeamName.TrimEnd().ToUpper()).FirstOrDefault();
 
                 if (teamsRepeatedFiltered != null)
                 {
-                    ModelState.AddModelError("", "Review already exists");
-                    return StatusCode(422, ModelState);
-                }
+					_logger.LogError($"409. Task with the same name {teamCreate.TeamName} already exist in DB");
+					return Conflict("Task with the same name already exist in DB");
+				}
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
 
             var teamMap = _mapper.Map<Team>(teamCreate);
 
@@ -168,35 +228,65 @@ namespace CodeCompetitionBackendCSharp.Controllers
             try 
             {
                 await _teamService.CreateTeam(teamMap);
-                return Ok("Successfully created");
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
+
+				_logger.LogInfo($"200. Team {teamMap.TeamName} created");
+				return Ok("Successfully created");
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
         [HttpPut("{teamId}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> UpdateTeam(int teamId, [FromBody] TeamDto updatedTeam)
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> UpdateTeam(int teamId, [FromBody] TeamDto updatedTeam)
         {
-            if (updatedTeam == null)
-                return BadRequest(ModelState);
+            _logger.LogDebug($"UpdateTeam {teamId} with {JsonConvert.SerializeObject(updatedTeam)} started");
 
-            if (teamId != updatedTeam.Id)
+			if (updatedTeam == null)
+			{
+				_logger.LogError($"400. Bad Request. {ModelState}");
+				return BadRequest(ModelState);
+			}
+
+			if (teamId != updatedTeam.Id)
             {
-                return BadRequest(ModelState);
-            }
+				_logger.LogError($"400. Bad Request. {ModelState}");
+				return BadRequest(ModelState);
+			}
 
-            bool isExist = await _teamService.TeamExists(teamId);
-            if (!isExist)
+            try
             {
-                return NotFound();
-            }
+				bool isExist = await _teamService.TeamExists(teamId);
 
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
+
+				if (!isExist)
+				{
+					_logger.LogError($"404. Team {teamId} couldn't found.");
+					return NotFound();
+				}
+			}
+            catch (Exception ex)
+            {
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
+			}            
 
             var teamMap = _mapper.Map<Team>(updatedTeam);
 
@@ -206,72 +296,129 @@ namespace CodeCompetitionBackendCSharp.Controllers
             try
             {
                 bool isUpdated = await _teamService.UpdateTeam(teamMap);
-                if (!isUpdated)
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
+
+				if (!isUpdated)
                 {
                     ModelState.AddModelError("", "Something went wrong while updating team");
-                    return StatusCode(500, ModelState);
+
+					_logger.LogError($"500. {ModelState}");
+					return StatusCode(500, ModelState);
                 }
-                return NoContent(); ;
+
+				_logger.LogInfo($"204. Team {teamId} updated.");
+				return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
            
         }
 
         [HttpDelete("{teamId}")]
-        [ProducesResponseType(400)]
         [ProducesResponseType(204)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> DeleteTeam(int teamId)
+        [ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(404)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> DeleteTeam(int teamId)
         {
-            bool isExist = await _teamService.TeamExists(teamId);
-            if (!isExist)
-            {
-                return NotFound();
-            }
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            _logger.LogDebug($"DeleteTeam {teamId} started");
 
             try
             {
+				bool isExist = await _teamService.TeamExists(teamId);
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
+
+				if (!isExist)
+				{
+					_logger.LogError($"404. Team {teamId} couldn't found");
+					return NotFound();
+				}
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
+			}
+
+			try
+            {
                 var teamToDelete = await _teamService.GetTeam(teamId);
 
-                Enum.Status newStatus = Enum.Status.NotActive;
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				};
+
                 DateTime updateDate = DateTime.Now;
                 int updateUserId = Enum.TEMP_USER_ID;
-                bool isDeleted = await _teamService.DeleteTeam(teamToDelete, newStatus, updateDate, updateUserId);
+                bool isDeleted = await _teamService.DeleteTeam(teamToDelete, Enum.Status.NotActive, updateDate, updateUserId);
 
-                if (!isDeleted)
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
+
+				if (!isDeleted)
                 {
                     ModelState.AddModelError("", "Something went wrong while updating team");
-                    return StatusCode(500, ModelState);
+					
+					_logger.LogError($"500. {ModelState}");
+					return StatusCode(500, ModelState);
                 }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
 
-            var teamTasks = await _taskToTeamService.GetTeamsTasks();
-            var teamTasksToDelete = teamTasks.Where(tt => tt.TeamId == teamId);
+			try
+			{
+				var teamTasks = await _taskToTeamService.GetTeamsTasks();
 
-            foreach(var teamTask in teamTasksToDelete) 
-            {
-                try
-                {
-                    await _taskToTeamService.DeleteTeamTask(Enum.TaskStatus.Fail, teamTask);
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, ex.Message);
-                }
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+					return BadRequest(ModelState);
+				}
 
-            }
+				var teamTasksToDelete = teamTasks.Where(tt => tt.TeamId == teamId);
 
-            return NoContent(); 
+				foreach (var teamTask in teamTasksToDelete)
+				{
+					await _taskToTeamService.DeleteTeamTask(Enum.TaskStatus.Fail, teamTask);
+
+					if (!ModelState.IsValid)
+					{
+						_logger.LogError($"400. Bad Request. {ModelState.ToString()}");
+						return BadRequest(ModelState);
+					}
+				}
+			}
+
+			catch (Exception ex)
+			{
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
+			}
+
+			return NoContent(); 
         }
     }
 }
