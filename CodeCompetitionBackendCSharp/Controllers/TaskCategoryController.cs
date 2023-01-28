@@ -31,7 +31,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
 		[HttpGet]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<TaskCategory>))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(IEnumerable<TaskCategory>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		public async Task<IActionResult> GetTaskCategories([FromQuery] TaskCategoryParameters taskCategoryParameters)
@@ -40,7 +42,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             try
             {
-                taskCategoryParameters.switchOff = taskCategoryParameters.switchOffString == "1" ? true : false;
+                taskCategoryParameters.SwitchOff = taskCategoryParameters.SwitchOffString == "1" ? true : false;
                 var getTaskResult = await _taskCategoryService.GetTaskCategories(taskCategoryParameters);
                 
                 if (!ModelState.IsValid)
@@ -63,7 +65,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("{taskCategoryId}")]
-        [ProducesResponseType(200, Type = typeof(TaskCategory))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(TaskCategory))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		public async Task<IActionResult> GetTaskCategory(int taskCategoryId)
@@ -73,6 +77,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
             try
             {
                 var getTaskResult = await _taskCategoryService.IsTaskCategoryExist(taskCategoryId);
+
                 if (!getTaskResult)
                 {
 					_logger.LogError($"404. Not found Task category with id {taskCategoryId}");
@@ -100,7 +105,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(422)]
@@ -115,8 +122,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
             TaskCategoryParameters taskCategoryParameters = new TaskCategoryParameters
             {
-                switchOffString = "1",
-                switchOff = true
+                SwitchOffString = "1",
+                SwitchOff = true
             };
 
             try
@@ -165,6 +172,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpPut("{taskCategoryId}")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(204)]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
@@ -220,6 +229,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpDelete("{taskCategoryId}")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(204)]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]

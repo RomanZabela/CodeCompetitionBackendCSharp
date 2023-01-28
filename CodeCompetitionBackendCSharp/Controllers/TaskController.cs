@@ -35,7 +35,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(500)]
@@ -43,7 +45,13 @@ namespace CodeCompetitionBackendCSharp.Controllers
         {
 			_logger.LogDebug($"GetTasks TaskParameters:{JsonConvert.SerializeObject(taskParameters)} started");
 
-            try
+			if (taskParameters == null)
+			{
+				_logger.LogError($"400. Bad Request. {ModelState}");
+				return BadRequest(ModelState);
+			}
+
+			try
             {
                 var taskAsync = await _taskService.GetTasks(taskParameters);
 
@@ -79,9 +87,15 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		{
 			_logger.LogDebug($"GetTasksExtended TaskParameters: {JsonConvert.SerializeObject(taskParameters)} started");
 
+			if (taskParameters == null)
+			{
+				_logger.LogError($"400. Bad Request. {ModelState}");
+				return BadRequest(ModelState);
+			}
+
 			try
 			{
-                taskParameters.switchOff = taskParameters.switchOffString == "1" ? true : false;
+                taskParameters.SwitchOff = taskParameters.SwitchOffString == "1" ? true : false;
 
                 var taskAsync = await _taskService.GetTasksExtended(taskParameters);
 
@@ -107,43 +121,84 @@ namespace CodeCompetitionBackendCSharp.Controllers
         [Authorize(Roles = "system administrator, competition administrator, participant")]
 
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
-        public async Task<IActionResult> GetTasksByTeamId([FromQuery] TaskParameters taskParameters, int teamId)
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> GetTasksByTeamId([FromQuery] TaskParameters taskParameters, int teamId)
         {
-            try
+			_logger.LogDebug($"GetTasksByTeamId TaskParameters:{JsonConvert.SerializeObject(taskParameters)} teamID: {teamId} started");
+
+			if (taskParameters == null)
+			{
+				_logger.LogError($"400. Bad Request. {ModelState}");
+				return BadRequest(ModelState);
+			}
+
+			try
             {
-                taskParameters.switchOff = taskParameters.switchOffString == "1" ? true : false;
+                taskParameters.SwitchOff = taskParameters.SwitchOffString == "1" ? true : false;
 
                 var taskAsync = await _taskService.GetTasksByTeamIdInProgress(taskParameters, teamId);
 
-                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
 
+				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+
+				_logger.LogInfo($"200. Task: {taskAsync}.");
                 return Ok(taskAsync);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
         [HttpGet("submitted/byTeamId/{teamId}")]
         [Authorize(Roles = "system administrator, competition administrator, participant")]
 
+
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
-        public async Task<IActionResult> GetSubmittedTasksByTeamId([FromQuery] TaskParameters taskParameters, int teamId)
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+
+		public async Task<IActionResult> GetSubmittedTasksByTeamId([FromQuery] TaskParameters taskParameters, int teamId)
         {
-            try
+
+			_logger.LogDebug($"GetSubmittedTasksByTeamId TaskParameters:{JsonConvert.SerializeObject(taskParameters)} teamID: {teamId} started");
+
+			if (taskParameters == null)
+			{
+				_logger.LogError($"400. Bad Request. {ModelState}");
+				return BadRequest(ModelState);
+			}
+
+			try
             {
-                taskParameters.switchOff = taskParameters.switchOffString == "1" ? true : false;
+                taskParameters.SwitchOff = taskParameters.SwitchOffString == "1" ? true : false;
 
                 var taskAsync = await _taskService.GetTasksByTeamIdSubmitted(taskParameters, teamId);
+				
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
 
-                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
 
-                return Ok(taskAsync);
+				_logger.LogInfo($"200. Task: {taskAsync}.");
+				return Ok(taskAsync);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
             }
         }
 
@@ -153,6 +208,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		[ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
 		public async Task<IActionResult> GetTasksByCompetitionId([FromQuery] TaskParameters taskParameters, int competitionId)
 		{
 			_logger.LogDebug($"GetTasksByCompetitionId TaskParameters: {JsonConvert.SerializeObject(taskParameters)} competitionID: {competitionId} started.");
@@ -165,7 +221,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 			try
 			{
-                taskParameters.switchOff = taskParameters.switchOffString == "1" ? true : false;
+                taskParameters.SwitchOff = taskParameters.SwitchOffString == "1" ? true : false;
 
                 var taskAsync = await _taskService.GetTasksByCompetitionId(taskParameters, competitionId);
 
@@ -190,7 +246,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
 		[HttpGet("{taskId}")]
-        [ProducesResponseType(200, Type = typeof(Models.Task))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
 		[ProducesResponseType(404)]
 		[ProducesResponseType(500)]
@@ -230,7 +288,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("{taskCategoryId}/Tasks")]
-        [ProducesResponseType(200, Type = typeof(Models.Task))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
 		[ProducesResponseType(404)]
 		[ProducesResponseType(500)]
@@ -268,7 +328,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
 		[ProducesResponseType(409)]
 		[ProducesResponseType(500)]
@@ -285,7 +347,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
             try
             {
                 TaskParameters taskParameters = new TaskParameters();
-                taskParameters.switchOff = true;
+                taskParameters.SwitchOff = true;
 
 				var taskExist = (await _taskService.GetTasks(taskParameters))
                                                     .Where(te => te.TaskName.Trim().ToLower() == task.TaskName.Trim().ToLower()).ToList();
@@ -339,7 +401,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpPut("{taskId}")]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> UpdateTask(int taskId, [FromBody] TaskDto updateTask)
@@ -401,7 +465,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpDelete("{taskId}")]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
 		[ProducesResponseType(404)]
 		[ProducesResponseType(500)]

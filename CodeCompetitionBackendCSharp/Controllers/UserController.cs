@@ -27,7 +27,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(IEnumerable<UserDto>))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(IEnumerable<UserDto>))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
         [ProducesResponseType(500)]
@@ -69,6 +71,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 
         [HttpGet("withRoles")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(200, Type = typeof(IEnumerable<UserDtoExtended>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
@@ -76,6 +80,12 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		public async Task<IActionResult> GetUsersWithRoles([FromQuery] UserParameters userParameters)
         {
 			_logger.LogDebug($"GetUsersWithRoles UserParameters: {JsonConvert.SerializeObject(userParameters)} started.");
+
+			if (userParameters == null)
+			{
+				_logger.LogError($"400. Bad Request. {ModelState}");
+				return BadRequest(ModelState);
+			}
 
             try
             {
@@ -117,13 +127,18 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 					if (roles.Count > 0)
 					{
-						userRoles.Add(roles.Select(x => new RoleDto
+						var newRole = roles.Select(x => new RoleDto
 						{
 							Id = x.Id,
 							Name = x.Name,
 							Description = x.Description,
 							UserId = user.Id
-						}).FirstOrDefault());
+						}).FirstOrDefault();
+
+						if (newRole != null)
+						{
+							userRoles.Add(newRole);
+						};
 					}
 				}
 
@@ -131,12 +146,17 @@ namespace CodeCompetitionBackendCSharp.Controllers
 				{
 					if (userRoles.Exists(ur => ur.UserId == user.Id))
 					{
-						user.RoleName = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault().Name;
-						user.RoleId = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault().Id;
+						var newRoleName = userRoles.Where(ur => ur.UserId == user.Id).FirstOrDefault();
+
+						if (newRoleName != null)
+						{
+							user.RoleName = newRoleName.Name;
+							user.RoleId = newRoleName.Id;
+						}
 					}
 				}
 
-				var toReturn = Paging.PagedList<UserDtoExtended>.ToPagedList(userList, userParameters.PageNumber, userParameters.PageSize, userParameters.switchOff);
+				var toReturn = Paging.PagedList<UserDtoExtended>.ToPagedList(userList, userParameters.PageNumber, userParameters.PageSize, userParameters.SwitchOff);
                 Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(toReturn.MetaData));
 
 				_logger.LogInfo($"200. Users: {JsonConvert.SerializeObject(toReturn)}");
@@ -151,6 +171,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("allRoles")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(200, Type = typeof(IEnumerable<UserDtoExtended>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
@@ -191,6 +213,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
         [HttpGet("userRoles/{Id}")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(200, Type = typeof(IEnumerable<UserDtoExtended>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
@@ -218,6 +242,7 @@ namespace CodeCompetitionBackendCSharp.Controllers
 					Description = x.Description
 				});
 
+				_logger.LogInfo($"200. UserRoles: {JsonConvert.SerializeObject(result)}");
 				return Ok(result);
 			}
 			catch (Exception ex)
@@ -229,6 +254,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
         [HttpDelete("deleteRoles/{Id}")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(204)]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
@@ -273,6 +300,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpPut("assignRoles/{Id}")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(200, Type = typeof(string))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]

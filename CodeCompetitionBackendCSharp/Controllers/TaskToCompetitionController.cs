@@ -30,7 +30,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
         [HttpGet("{taskId}/competitonIds")]
-        [ProducesResponseType(200, Type = typeof(Models.Task))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(500)]
@@ -66,7 +68,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpGet("{competitionId}/taskIds")]
-        [ProducesResponseType(200, Type = typeof(Models.Task))]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(Models.Task))]
         [ProducesResponseType(400)]
 		[ProducesResponseType(401)]
 		[ProducesResponseType(500)]
@@ -104,6 +108,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
 		[HttpPost]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(200, Type = typeof(string))]
 		[ProducesResponseType(204)]
 		[ProducesResponseType(400)]
@@ -158,6 +164,8 @@ namespace CodeCompetitionBackendCSharp.Controllers
 		}
 
 		[HttpDelete("{competitionId}")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
 		[ProducesResponseType(204)]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
@@ -208,7 +216,9 @@ namespace CodeCompetitionBackendCSharp.Controllers
         }
 
         [HttpDelete]
-        [ProducesResponseType(204)]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
 		[ProducesResponseType(500)]

@@ -1,6 +1,5 @@
 ﻿namespace CodeCompetitionBackendCSharp
 {
-
     public class Enum
     {
         public const int TEMP_USER_ID = 1;

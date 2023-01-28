@@ -2,7 +2,7 @@
 {
     public class SubmitTaskDataDto
     {
-        public string GithubUrl { get; set; } = "";
-        public string SubmitterComment { get; set; } = "";
+        public string GithubUrl { get; set; } = string.Empty;
+        public string SubmitterComment { get; set; } = string.Empty;
     }
 }
