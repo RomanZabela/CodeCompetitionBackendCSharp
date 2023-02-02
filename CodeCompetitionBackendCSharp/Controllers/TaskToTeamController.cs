@@ -3,10 +3,12 @@ using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
 using CodeCompetitionBackendCSharp.Repository;
+using CodeCompetitionBackendCSharp.RequestFeatures;
 using CodeCompetitionBackendCSharp.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace CodeCompetitionBackendCSharp.Controllers
 {
@@ -18,7 +20,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
         private readonly ITaskToTeamService _taskToTeamService;
         private readonly ITeamService _teamService;
         private readonly ITaskService _taskService;
-
         private readonly IMapper _mapper;
         private readonly ILoggerManager _logger;
 
@@ -38,7 +39,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet]
 		[Authorize(Roles = "system administrator, competition administrator, participant")]
-
 		[ProducesResponseType(200, Type = typeof(List<Team>))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -68,7 +68,38 @@ namespace CodeCompetitionBackendCSharp.Controllers
             }
         }
 
-        [HttpGet("tasksCount/{teamId}")]
+		[HttpGet("byTaskIdAndTeamIdAndCompetitionId/{taskId}/{teamId}/{competitionId}")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+		[ProducesResponseType(200, Type = typeof(List<Team>))]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> GetTeamTasksByTaskIdAndTeamIdAndCompetitionId(int taskId, int teamId, int competitionId)
+		{
+			_logger.LogDebug($"GetTeamTasksByTeamIdAndCompetitionId started with parameters task id: {taskId}, team id: {teamId}, competition id: {competitionId}");
+
+			try
+			{
+				var teams = await _taskToTeamService.GetTeamTasksByTaskIdAndTeamIdAndCompetitionId(taskId, teamId, competitionId);
+				ICollection<TaskToTeamDto> teamsDto = _mapper.Map<ICollection<TaskToTeamDto>>(teams);
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
+
+				_logger.LogInfo($"200. TaskToTeam: {JsonConvert.SerializeObject(teamsDto)}");
+				return Ok(teamsDto);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
+			}
+		}
+
+		[HttpGet("tasksCount/{teamId}")]
 		[Authorize(Roles = "system administrator, competition administrator, participant")]
 
 		[ProducesResponseType(200, Type = typeof(int))]
@@ -441,6 +472,105 @@ namespace CodeCompetitionBackendCSharp.Controllers
                 return StatusCode(500, ex.Message);
             }
 		}
-	}
+
+        [HttpPut("evaluate")]
+        [Authorize(Roles = "system administrator, competition administrator, participant")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> EvaluateTask([FromBody] EvaluateTaskDataDto evaluateTaskDataDto)
+        {
+            _logger.LogDebug($"Evaluate Task method with parameter evaluateTaskDataDto = {evaluateTaskDataDto} started.");
+
+            if (evaluateTaskDataDto == null)
+            {
+                _logger.LogError($"400. Bad Request. {ModelState}");
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var isTaskExist = await _taskService.IsTaskExist(evaluateTaskDataDto.TaskId);
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogError($"400. Bad Request. {ModelState}");
+                    return BadRequest(ModelState);
+                };
+
+                if (!isTaskExist)
+                {
+                    _logger.LogError($"404. Task {evaluateTaskDataDto.TaskId} hasn't been found.");
+                    return NotFound();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"500. {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
+
+            try
+            {
+                var isTeamExist = await _teamService.TeamExists(evaluateTaskDataDto.TeamId);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogError($"400. Bad Request. {ModelState}");
+                    return BadRequest(ModelState);
+                };
+
+                if (!isTeamExist)
+                {
+                    _logger.LogError($"404. Team {evaluateTaskDataDto.TeamId} hasn't been found.");
+                    return NotFound();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"500. {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
+
+			try
+            {
+              
+				var tasksToTeams = await _taskToTeamService.GetTeamsTasks();
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogError($"400. Bad Request. {ModelState}");
+                    return BadRequest(ModelState);
+                };
+
+                var tasksToTeamsToEvaluate = await _taskToTeamService.GetTeamTasksByTaskIdAndTeamIdAndCompetitionId(evaluateTaskDataDto.TaskId, evaluateTaskDataDto.TeamId, evaluateTaskDataDto.CompetitionId);
+
+                foreach (var taskToTeam in tasksToTeamsToEvaluate)
+                {
+                    taskToTeam.ReachedScore = evaluateTaskDataDto.Score;
+                    taskToTeam.TaskStatusId = evaluateTaskDataDto.TaskStatusId;
+                    taskToTeam.CompetitionAdminComment = evaluateTaskDataDto.Comment;
+
+                    await _taskToTeamService.EvaluateTask(taskToTeam);
+
+                    if (!ModelState.IsValid)
+                    {
+                        _logger.LogError($"400. Bad Request. {ModelState}");
+                        return BadRequest(ModelState);
+                    }
+                };
+
+                _logger.LogInfo($"204. TaskToTeam with TaskId {evaluateTaskDataDto.TaskId} and TeamId {evaluateTaskDataDto.TeamId} is evaluated.");
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"500. {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+    }
 }
 

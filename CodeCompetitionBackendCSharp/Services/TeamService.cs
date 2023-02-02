@@ -109,5 +109,25 @@ namespace CodeCompetitionBackendCSharp.Services
 
             return PagedList<TeamExtendedDto>.ToPagedList(results, teamsParameters.PageNumber, teamsParameters.PageSize, teamsParameters.SwitchOff);
         }
-    }
+
+		public async Task<PagedList<TeamExtendedDto>> GetTeamsExtendedByCompetitionId(TeamParameters teamsParameters, int competitionId)
+		{
+			teamsParameters.SwitchOff = teamsParameters.SwitchOffString == "1" ? true : false;
+			var results = await (from t in _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active)
+								 join p in _context.Participants.Where(t => t.StatusId == (int)Enum.Status.Active) on t.TeamLeaderId equals p.Id
+								 join c in _context.Competitions.Where(t => t.StatusId == (int)Enum.Status.Active && t.Id == competitionId) on t.CompetitionId equals c.Id
+								 select new TeamExtendedDto
+								 {
+									 Id = t.Id,
+									 TeamName = t.TeamName,
+									 TeamLeaderEmail = p.Email,
+									 IconImage = t.IconImage,
+									 TotalPoints = t.TotalPoints,
+									 CompetitionId = c.Id,
+									 CompetitionName = c.CompetitionName
+								 }).ToListAsync();
+
+			return PagedList<TeamExtendedDto>.ToPagedList(results, teamsParameters.PageNumber, teamsParameters.PageSize, teamsParameters.SwitchOff);
+		}
+	}
 }
