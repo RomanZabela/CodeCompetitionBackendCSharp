@@ -1,4 +1,5 @@
 ﻿using CodeCompetitionBackendCSharp.Data;
+using CodeCompetitionBackendCSharp.Dto;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Models;
 using Microsoft.EntityFrameworkCore;
@@ -62,7 +63,33 @@ namespace CodeCompetitionBackendCSharp.Services
             return tasksToTeams;
         }
 
-        async public Task<bool> Save()
+		async public Task<ICollection<TaskToTeam>> GetTeamTasksByTaskIdAndTeamIdAndCompetitionId(int taskId, int teamId, int competitionId)
+        {
+			var result = await (from ttm in _context.TaskToTeams.Where(ttm => ttm.StatusId == (int)Enum.Status.Active && ttm.TaskId == taskId && ttm.TeamId == teamId)
+								 join t in _context.Teams.Where(t => t.StatusId == (int)Enum.Status.Active && t.CompetitionId == competitionId) on ttm.TeamId equals t.Id
+								 select new TaskToTeam
+								 {
+									 Id = t.Id,
+									 TeamId = t.Id,
+                                     TaskId = ttm.TaskId,
+                                     TaskStatusId = ttm.TaskStatusId,
+                                     StatusId = ttm.StatusId,
+                                     ParticipantIdForTask = ttm.ParticipantIdForTask,
+                                     CreateDate = ttm.CreateDate,
+                                     UpdateDate = ttm.UpdateDate,
+                                     StartTime = ttm.StartTime,
+                                     EndTime = ttm.EndTime,
+                                     CreateUserId = ttm.CreateUserId,
+                                     UpdateUserId = ttm.UpdateUserId,
+                                     ReachedScore = ttm.ReachedScore,
+                                     GithubUrl = ttm.GithubUrl,
+                                     SubmitterComment = ttm.SubmitterComment,
+                                     CompetitionAdminComment = ttm.CompetitionAdminComment
+								 }).ToListAsync();
+            return result;
+		}
+
+		async public Task<bool> Save()
         {
             int saved = await _context.SaveChangesAsync();
             return saved > 0 ? true : false;
@@ -87,5 +114,22 @@ namespace CodeCompetitionBackendCSharp.Services
 
             return await Save();
 		}
-	}
+
+        public async Task<bool> EvaluateTask(TaskToTeam taskToTeam)
+        {
+            taskToTeam.UpdateDate = DateTime.Now;
+            taskToTeam.UpdateUserId = Enum.TEMP_USER_ID;
+           
+            _context.Attach(taskToTeam);
+
+            _context.Entry(taskToTeam).Property(tt => tt.UpdateDate).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.EndTime).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.UpdateUserId).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.TaskStatusId).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.CompetitionAdminComment).IsModified = true;
+            _context.Entry(taskToTeam).Property(tt => tt.ReachedScore).IsModified = true;
+
+            return await Save();
+        }
+    }
 }

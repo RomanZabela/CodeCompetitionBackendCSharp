@@ -160,8 +160,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         [HttpGet("submitted/byTeamId/{teamId}")]
         [Authorize(Roles = "system administrator, competition administrator, participant")]
-
-
         [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(401)]
@@ -199,6 +197,48 @@ namespace CodeCompetitionBackendCSharp.Controllers
             {
 				_logger.LogError($"500. {ex.Message}");
 				return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("submitted/all/{competitionId}/{teamId}")]
+        [Authorize(Roles = "system administrator, competition administrator, participant")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Models.Task>))]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(500)]
+
+        public async Task<IActionResult> GetAllSubmittedTasksByCompetitionIdAndTeamId([FromQuery] TaskParameters taskParameters, int competitionId, int teamId)
+        {
+
+            _logger.LogDebug($"Get all submitted tasks with TaskParameters:{JsonConvert.SerializeObject(taskParameters)}, competitionId: {competitionId} method started");
+
+            if (taskParameters == null)
+            {
+                _logger.LogError($"400. Bad Request. {ModelState}");
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                taskParameters.SwitchOff = taskParameters.SwitchOffString == "1" ? true : false;
+
+                var taskAsync = await _taskService.GetAllSubmittedTasksByCompetitionIdAndTeamId(taskParameters, competitionId, teamId);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogError($"400. Bad Request. {ModelState}");
+                    return BadRequest(ModelState);
+                }
+
+                Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(taskAsync.MetaData));
+
+                _logger.LogInfo($"200. Task: {taskAsync}.");
+                return Ok(taskAsync);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"500. {ex.Message}");
+                return StatusCode(500, ex.Message);
             }
         }
 

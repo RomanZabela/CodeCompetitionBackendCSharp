@@ -103,7 +103,40 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
         }
 
-        [HttpGet("{teamId}")]
+		[HttpGet("extended/byCompetitionId/{competitionId}")]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
+
+		[ProducesResponseType(200, Type = typeof(PagedList<TeamExtendedDto>))]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> GetTeamsExtendedByCompetitionId([FromQuery] TeamParameters teamParameters, int competitionId)
+		{
+			_logger.LogDebug($"GetTeamsExtended by competition id with params: {teamParameters} and competition id {competitionId} started");
+
+			try
+			{
+				var teams = await _teamService.GetTeamsExtendedByCompetitionId(teamParameters, competitionId);
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
+
+				Response.Headers.Add("X-Pagination", JsonConvert.SerializeObject(teams.MetaData));
+
+				_logger.LogInfo($"200. Teams: {JsonConvert.SerializeObject(teams)}.");
+				return Ok(teams);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
+			}
+		}
+
+		[HttpGet("{teamId}")]
 		[Authorize(Roles = "system administrator, competition administrator, participant")]
 
 		[ProducesResponseType(200, Type = typeof(Models.Team))]

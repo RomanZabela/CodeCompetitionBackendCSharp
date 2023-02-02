@@ -9,7 +9,8 @@ namespace CodeCompetitionBackendCSharp.Interface
     {
         Task<PagedList<TeamDto>> GetTeams(TeamParameters teamsParameters);
         Task<PagedList<TeamExtendedDto>> GetTeamsExtended(TeamParameters teamsParameters);
-        Task<bool> TeamExists(int teamId);  
+        Task<PagedList<TeamExtendedDto>> GetTeamsExtendedByCompetitionId(TeamParameters teamsParameters, int competitionId);
+		Task<bool> TeamExists(int teamId);  
         Task<Team> GetTeam(int teamId);
         Task<Team> GetTeamByParticipantId(int participantId);
         Task<bool> CreateTeam(Team team);
