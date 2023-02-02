@@ -101,7 +101,6 @@ namespace CodeCompetitionBackendCSharp.Controllers
 
 		[HttpGet("tasksCount/{teamId}")]
 		[Authorize(Roles = "system administrator, competition administrator, participant")]
-
 		[ProducesResponseType(200, Type = typeof(int))]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
@@ -130,9 +129,38 @@ namespace CodeCompetitionBackendCSharp.Controllers
             }
         }
 
-        [HttpPost]
+		[HttpGet("overallScore/{teamId}/{competitionId}")]
 		[Authorize(Roles = "system administrator, competition administrator, participant")]
+		[ProducesResponseType(200, Type = typeof(int))]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(401)]
+		[ProducesResponseType(500)]
+		public async Task<IActionResult> GetOverallScoreByTeamIdAndCompetitionId(int teamId, int competitionId)
+		{
+			_logger.LogDebug($"GetOverallScoreByTeamIdAndCompetitionId teamID: {teamId} competitionId: {competitionId} started.");
 
+			try
+			{
+				int overallScore = await _taskToTeamService.GetOverallScoreByTeamIdAndCompetitionId(teamId, competitionId);
+
+				if (!ModelState.IsValid)
+				{
+					_logger.LogError($"400. Bad Request. {ModelState}");
+					return BadRequest(ModelState);
+				}
+
+				_logger.LogInfo($"200. Overall score: {overallScore}");
+				return Ok(overallScore);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError($"500. {ex.Message}");
+				return StatusCode(500, ex.Message);
+			}
+		}
+
+		[HttpPost]
+		[Authorize(Roles = "system administrator, competition administrator, participant")]
 		[ProducesResponseType(204)]
         [ProducesResponseType(400)]
         [ProducesResponseType(401)]
