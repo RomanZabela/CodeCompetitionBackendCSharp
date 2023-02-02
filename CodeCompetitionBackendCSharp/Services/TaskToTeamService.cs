@@ -57,7 +57,19 @@ namespace CodeCompetitionBackendCSharp.Services
            return await _context.TaskToTeams.Where(tt => (tt.TeamId == teamId) && (tt.TaskStatusId == (int)Enum.TaskStatus.InProgress)).CountAsync(); 
         }
 
-        async public Task<ICollection<TaskToTeam>> GetTeamsTasks()
+		public async Task<int> GetOverallScoreByTeamIdAndCompetitionId(int teamId, int competitionId)
+		{
+            // List<Team> teamsByCompetitionId = await _context.Teams.Where(t => t.CompetitionId == competitionId && t.StatusId == (int)Enum.Status.Active).ToListAsync();
+
+            var scoreList = await (from tt in _context.TaskToTeams.Where(tt => tt.TeamId == teamId && tt.StatusId == (int)Enum.Status.Active)
+                                     join t in _context.Teams.Where(t => t.CompetitionId == competitionId && t.StatusId == (int)Enum.Status.Active) on tt.TeamId equals t.Id
+                                     select tt.ReachedScore).ToListAsync();
+			
+
+			return (int)scoreList.Sum();
+		}
+
+		async public Task<ICollection<TaskToTeam>> GetTeamsTasks()
         {
             var tasksToTeams = await _context.TaskToTeams.Where(tt => tt.StatusId == (int)Enum.Status.Active).ToListAsync();
             return tasksToTeams;
