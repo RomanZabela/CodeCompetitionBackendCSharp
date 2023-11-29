@@ -1,3 +1,4 @@
+using Auth0Net.DependencyInjection;
 using CodeCompetitionBackendCSharp.Data;
 using CodeCompetitionBackendCSharp.Interface;
 using CodeCompetitionBackendCSharp.Repository;
